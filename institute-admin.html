@@ -1,0 +1,2557 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Institute Admin</title>
+<style>
+  :root {
+    --bg: #eef0f5;
+    --bg-inset: #e4e7ee;
+    --panel: #ffffff;
+    --panel-alt: #fbfbfe;
+    --border: #dcdfe8;
+    --border-soft: #e8eaf1;
+    --text: #1b2030;
+    --text-soft: #565d70;
+    --text-faint: #7a8195;
+    --accent: #3548c4;
+    --accent-strong: #2a3aa3;
+    --accent-soft: #eaecfb;
+    --accent-soft-border: #ccd2f5;
+    --success: #17805a;
+    --success-soft: #e4f5ee;
+    --warning: #a5670a;
+    --warning-soft: #fbf0dd;
+    --danger: #c0392f;
+    --danger-soft: #fbeae8;
+    --pending: #7a4fc2;
+    --pending-soft: #f1ebfb;
+    --series-1: #2a78d6;
+    --series-muted: #c9ccd6;
+    --grid: #eceef3;
+    --shadow: 0 1px 2px rgba(23, 27, 43, 0.04), 0 8px 24px -12px rgba(23, 27, 43, 0.18);
+    --shadow-lg: 0 24px 48px -20px rgba(23, 27, 43, 0.35);
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --font-ui: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #10121a;
+      --bg-inset: #0b0d13;
+      --panel: #181b26;
+      --panel-alt: #1d2130;
+      --border: #2b2f40;
+      --border-soft: #242838;
+      --text: #e8e9f2;
+      --text-soft: #a3a9bc;
+      --text-faint: #7d849a;
+      --accent: #7385ff;
+      --accent-strong: #93a1ff;
+      --accent-soft: #232a4d;
+      --accent-soft-border: #34407a;
+      --success: #3fc491;
+      --success-soft: #16281f;
+      --warning: #e0a83e;
+      --warning-soft: #2c2410;
+      --danger: #f0685f;
+      --danger-soft: #2e1917;
+      --pending: #b69cf2;
+      --pending-soft: #261d3a;
+      --series-1: #3987e5;
+      --series-muted: #3b4052;
+      --grid: #232736;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -12px rgba(0, 0, 0, 0.5);
+      --shadow-lg: 0 24px 48px -20px rgba(0, 0, 0, 0.7);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--font-ui); font-size: 14px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: var(--accent-soft-border); }
+  button, input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 4px; }
+  h1, h2, h3 { margin: 0; text-wrap: balance; }
+  p { margin: 0; }
+  a { color: var(--accent); }
+  .hidden { display: none !important; }
+  .mono { font-family: var(--font-mono); }
+  .num { font-variant-numeric: tabular-nums; }
+  .muted { color: var(--text-faint); }
+  .soft { color: var(--text-soft); }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    border-radius: var(--radius-sm); border: 1px solid var(--border);
+    background: var(--panel); color: var(--text);
+    padding: 7px 13px; font-size: 13px; font-weight: 550; cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease;
+    white-space: nowrap; text-decoration: none;
+  }
+  .btn:hover { background: var(--bg-inset); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); }
+  .btn-danger { color: var(--danger); }
+  .btn-danger:hover { background: var(--danger-soft); border-color: var(--danger); }
+  .btn-ghost { border-color: transparent; background: transparent; }
+  .btn-ghost:hover { background: var(--bg-inset); }
+  .btn-sm { padding: 4px 9px; font-size: 12px; }
+  .btn-block { width: 100%; }
+  .icon-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 7px;
+    border: none; background: transparent; color: var(--text-soft); cursor: pointer;
+  }
+  .icon-btn:hover { background: var(--bg-inset); color: var(--text); }
+
+  /* ---------- Pills ---------- */
+  .pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 2px 9px; border-radius: 999px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+    border: 1px solid transparent; white-space: nowrap;
+  }
+  .pill-dot { width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+  .pill-success { background: var(--success-soft); color: var(--success); }
+  .pill-warning { background: var(--warning-soft); color: var(--warning); }
+  .pill-danger { background: var(--danger-soft); color: var(--danger); }
+  .pill-muted { background: var(--bg-inset); color: var(--text-faint); border-color: var(--border); }
+  .pill-accent { background: var(--accent-soft); color: var(--accent); border-color: var(--accent-soft-border); }
+  .pill-pending { background: var(--pending-soft); color: var(--pending); border-color: color-mix(in srgb, var(--pending) 30%, transparent); }
+
+  /* ---------- Avatar ---------- */
+  .avatar {
+    position: relative; display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 999px; overflow: hidden; flex-shrink: 0;
+    background: var(--accent-soft); color: var(--accent); font-weight: 650;
+    border: 1px solid var(--accent-soft-border);
+  }
+  .avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+  /* ---------- Login ---------- */
+  .login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
+  .login-card {
+    width: min(400px, 100%); background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); box-shadow: var(--shadow); padding: 28px;
+  }
+  .login-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+  .login-card h1 { font-size: 19px; font-weight: 650; }
+  .login-card .lede { color: var(--text-soft); font-size: 13px; margin: 4px 0 20px; }
+  .login-form { display: flex; flex-direction: column; gap: 14px; }
+  .divider { display: flex; align-items: center; gap: 10px; color: var(--text-faint); font-size: 11.5px; margin: 18px 0 14px; }
+  .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+  .login-foot { margin-top: 18px; font-size: 11.5px; color: var(--text-faint); text-align: center; word-break: break-all; }
+
+  .brand-mark {
+    width: 30px; height: 30px; border-radius: 8px; background: var(--accent); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; letter-spacing: -0.02em; flex-shrink: 0;
+  }
+
+  /* ---------- App shell ---------- */
+  .app { display: flex; flex-direction: column; min-height: 100vh; }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 10px 20px; background: var(--panel); border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 30;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .topbar-title { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+  .topbar-title strong { font-size: 14.5px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .topbar-title span { font-size: 11.5px; color: var(--text-faint); }
+  .topbar-right { display: flex; align-items: center; gap: 8px; }
+  .inst-switch select {
+    padding: 6px 8px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+    background: var(--panel-alt); max-width: 220px;
+  }
+  .profile-chip {
+    display: flex; align-items: center; gap: 9px; padding: 4px 10px 4px 4px;
+    border: 1px solid var(--border); border-radius: 999px; background: var(--panel-alt);
+    text-decoration: none; color: var(--text); cursor: pointer;
+  }
+  .profile-chip:hover { border-color: var(--accent-soft-border); background: var(--accent-soft); }
+  .profile-chip .who { display: flex; flex-direction: column; line-height: 1.2; }
+  .profile-chip .who strong { font-size: 12.5px; font-weight: 600; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .profile-chip .who span { font-size: 10.5px; color: var(--text-faint); text-transform: capitalize; }
+  .demo-flag { font-size: 11px; font-weight: 650; color: var(--pending); background: var(--pending-soft); padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  @media (max-width: 640px) {
+    .profile-chip .who, .topbar-title span, .inst-switch { display: none; }
+    .topbar { padding: 10px 16px; }
+  }
+
+  .shell { flex: 1; display: grid; grid-template-columns: 220px 1fr; min-height: 0; }
+  .sidebar {
+    background: var(--panel); border-right: 1px solid var(--border);
+    padding: 14px 10px; display: flex; flex-direction: column; gap: 2px;
+    position: sticky; top: 55px; height: calc(100vh - 55px);
+  }
+  .nav-link {
+    display: flex; align-items: center; gap: 10px; padding: 8px 11px; border-radius: var(--radius-sm);
+    color: var(--text-soft); text-decoration: none; font-weight: 550; font-size: 13.5px;
+  }
+  .nav-link:hover { background: var(--bg-inset); color: var(--text); }
+  .nav-link.active { background: var(--accent-soft); color: var(--accent); }
+  .nav-link svg { flex-shrink: 0; }
+  .nav-spacer { flex: 1; }
+  .nav-small { font-size: 12.5px; }
+  .nav-count { margin-left: auto; font-size: 11px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+  @media (max-width: 860px) {
+    .shell { grid-template-columns: 1fr; }
+    .sidebar {
+      position: sticky; top: 51px; height: auto; z-index: 20; flex-direction: row; overflow-x: auto;
+      padding: 8px 12px; border-right: none; border-bottom: 1px solid var(--border);
+    }
+    .nav-spacer { display: none; }
+    .nav-link { white-space: nowrap; }
+    .nav-count { display: none; }
+  }
+
+  .main { min-width: 0; padding: 26px 30px 70px; }
+  @media (max-width: 860px) { .main { padding: 18px 16px 60px; } }
+
+  .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 20px; }
+  .page-head h1 { font-size: 21px; font-weight: 650; letter-spacing: -0.01em; }
+  .page-head p { color: var(--text-soft); font-size: 13px; margin-top: 3px; max-width: 70ch; }
+  .page-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .panel {
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 20px; box-shadow: var(--shadow); min-width: 0;
+  }
+  .panel + .panel { margin-top: 16px; }
+  .panel-title-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .panel-title { font-size: 14px; font-weight: 650; }
+  .panel-desc { color: var(--text-soft); font-size: 12.5px; margin-top: 3px; margin-bottom: 14px; max-width: 70ch; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .grid-2 > .panel + .panel { margin-top: 0; }
+  @media (max-width: 1000px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  /* ---------- KPI tiles ---------- */
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+  .kpi {
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 15px 16px; box-shadow: var(--shadow); min-width: 0;
+  }
+  .kpi-label { font-size: 11.5px; font-weight: 600; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; }
+  .kpi-value { font-size: 27px; font-weight: 650; letter-spacing: -0.02em; margin-top: 4px; font-variant-numeric: tabular-nums; line-height: 1.15; }
+  .kpi-sub { font-size: 12px; color: var(--text-soft); margin-top: 3px; }
+  .kpi-value .unit { font-size: 15px; font-weight: 600; color: var(--text-soft); margin-left: 2px; }
+
+  /* ---------- Notes / banners ---------- */
+  .note {
+    display: flex; gap: 10px; padding: 11px 13px; border-radius: var(--radius-md);
+    font-size: 12.5px; color: var(--text-soft); margin-bottom: 16px; border: 1px solid;
+  }
+  .note svg { flex-shrink: 0; margin-top: 1px; }
+  .note strong { color: var(--text); }
+  .note-pending { background: var(--pending-soft); border-color: color-mix(in srgb, var(--pending) 28%, transparent); }
+  .note-pending svg { color: var(--pending); }
+  .note-warn { background: var(--warning-soft); border-color: color-mix(in srgb, var(--warning) 30%, transparent); }
+  .note-warn svg { color: var(--warning); }
+  .note-info { background: var(--accent-soft); border-color: var(--accent-soft-border); }
+  .note-info svg { color: var(--accent); }
+
+  /* ---------- Forms ---------- */
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label, .field .label { font-size: 12px; font-weight: 600; color: var(--text-soft); }
+  .field input[type="text"], .field input[type="email"], .field input[type="password"], .field input[type="url"],
+  .field input[type="date"], .field select, .field textarea, .input {
+    padding: 8px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+    background: var(--panel-alt); width: 100%;
+  }
+  .field textarea { resize: vertical; min-height: 90px; font-family: var(--font-mono); font-size: 12.5px; }
+  .field-hint { font-size: 11.5px; color: var(--text-faint); }
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 640px) { .field-grid { grid-template-columns: 1fr; } }
+  .check { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; cursor: pointer; }
+  .check input { margin-top: 3px; }
+  .check small { display: block; color: var(--text-faint); font-size: 11.5px; }
+  .form-error { font-size: 12px; color: var(--danger); min-height: 16px; }
+
+  /* ---------- Toolbar ---------- */
+  .toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .search { position: relative; flex: 1; min-width: 180px; max-width: 320px; }
+  .search input { width: 100%; padding: 7px 10px 7px 30px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--panel-alt); }
+  .search svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); opacity: 0.5; }
+  .segmented { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+  .segmented button {
+    padding: 6px 11px; border: none; background: var(--panel-alt); cursor: pointer;
+    font-size: 12px; font-weight: 600; color: var(--text-soft); border-right: 1px solid var(--border);
+  }
+  .segmented button:last-child { border-right: none; }
+  .segmented button.active { background: var(--accent-soft); color: var(--accent); }
+  .toolbar-count { font-size: 12px; color: var(--text-faint); margin-left: auto; font-variant-numeric: tabular-nums; }
+  .bulk-bar {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 12px; margin-bottom: 12px;
+    background: var(--accent-soft); border: 1px solid var(--accent-soft-border); border-radius: var(--radius-md); font-size: 12.5px;
+  }
+
+  /* ---------- Tables ---------- */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border-soft); border-radius: var(--radius-md); }
+  table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.data th {
+    text-align: left; font-size: 11px; font-weight: 650; color: var(--text-faint);
+    text-transform: uppercase; letter-spacing: 0.05em; padding: 9px 12px;
+    background: var(--panel-alt); border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  table.data th.sortable { cursor: pointer; user-select: none; }
+  table.data th.sortable:hover { color: var(--text); }
+  table.data td { padding: 9px 12px; border-bottom: 1px solid var(--border-soft); vertical-align: middle; }
+  table.data tr:last-child td { border-bottom: none; }
+  table.data tbody tr:hover td { background: var(--panel-alt); }
+  table.data td.r, table.data th.r { text-align: right; }
+  .person { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .person-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+  .person-text strong { font-weight: 600; font-size: 13px; }
+  .person-text span { font-size: 11.5px; color: var(--text-faint); }
+  .row-actions { display: flex; gap: 4px; justify-content: flex-end; }
+  .empty { padding: 34px 16px; text-align: center; color: var(--text-faint); font-size: 13px; }
+  .inline-meter { display: flex; align-items: center; gap: 8px; min-width: 120px; }
+  .inline-meter .track { flex: 1; height: 6px; background: var(--grid); border-radius: 999px; overflow: hidden; }
+  .inline-meter .fill { height: 100%; background: var(--series-1); border-radius: 999px; }
+  .inline-meter span { font-size: 12px; font-variant-numeric: tabular-nums; min-width: 36px; text-align: right; }
+
+  /* ---------- Toggle switch ---------- */
+  .switch { position: relative; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; color: var(--text-soft); }
+  .switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .switch .track {
+    width: 34px; height: 20px; border-radius: 999px; background: var(--series-muted);
+    position: relative; transition: background 0.15s ease; flex-shrink: 0;
+  }
+  .switch .track::after {
+    content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 999px;
+    background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.25); transition: transform 0.15s ease;
+  }
+  .switch input:checked + .track { background: var(--success); }
+  .switch input:checked + .track::after { transform: translateX(14px); }
+  .switch input:focus-visible + .track { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .switch input:disabled + .track { opacity: 0.5; }
+
+  /* ---------- Charts ---------- */
+  .chart { margin-top: 6px; }
+  .bars { display: flex; align-items: flex-end; gap: 2px; height: 180px; padding-top: 10px; border-bottom: 1px solid var(--border); position: relative; }
+  .bars .gridline { position: absolute; left: 0; right: 0; border-top: 1px dashed var(--grid); pointer-events: none; }
+  .bars .gridline span { position: absolute; right: 0; top: -9px; font-size: 10.5px; color: var(--text-faint); background: var(--panel); padding-left: 4px; font-variant-numeric: tabular-nums; }
+  .bar-col { flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: stretch; gap: 2px; cursor: default; position: relative; z-index: 1; }
+  .bar-col .seg { width: 100%; max-width: 46px; margin: 0 auto; }
+  .bar-col .seg.top { border-radius: 4px 4px 0 0; }
+  .bar-col .seg.s1 { background: var(--series-1); }
+  .bar-col .seg.s0 { background: var(--series-muted); }
+  .bar-col:hover .seg { filter: brightness(1.08); }
+  .bar-labels { display: flex; gap: 2px; margin-top: 6px; }
+  .bar-labels span { flex: 1; min-width: 0; text-align: center; font-size: 10.5px; color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--text-soft); margin-bottom: 8px; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  .hbars { display: flex; flex-direction: column; gap: 9px; }
+  .hbar { display: grid; grid-template-columns: 110px 1fr 70px; align-items: center; gap: 10px; font-size: 12.5px; }
+  .hbar .track { height: 14px; background: var(--grid); border-radius: 0 4px 4px 0; overflow: hidden; }
+  .hbar .fill { height: 100%; background: var(--series-1); border-radius: 0 4px 4px 0; min-width: 2px; }
+  .hbar .val { text-align: right; font-variant-numeric: tabular-nums; color: var(--text-soft); }
+  details.table-view { margin-top: 12px; font-size: 12.5px; }
+  details.table-view summary { cursor: pointer; color: var(--text-faint); font-size: 12px; }
+  details.table-view table { margin-top: 8px; }
+  .viz-tip {
+    position: fixed; z-index: 200; pointer-events: none; background: var(--panel); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow-lg);
+    padding: 7px 10px; font-size: 12px; line-height: 1.45; max-width: 240px; white-space: pre-line;
+  }
+
+  /* ---------- Lists ---------- */
+  .list { display: flex; flex-direction: column; }
+  .list-item { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border-soft); }
+  .list-item:last-child { border-bottom: none; }
+  .list-item .t { font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; }
+  .list-item .s { font-size: 11.5px; color: var(--text-faint); }
+
+  /* ---------- Progress ---------- */
+  .progress { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-soft); margin: 10px 0; }
+  .progress .track { flex: 1; max-width: 320px; height: 6px; background: var(--grid); border-radius: 999px; overflow: hidden; }
+  .progress .fill { height: 100%; background: var(--accent); transition: width 0.2s ease; }
+
+  .spinner { width: 15px; height: 15px; border-radius: 999px; border: 2px solid var(--border); border-top-color: var(--accent); animation: spin 0.6s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .center-loading { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 60px 0; color: var(--text-faint); }
+
+  /* ---------- Profile ---------- */
+  .profile-grid { display: grid; grid-template-columns: 280px 1fr; gap: 16px; align-items: start; }
+  @media (max-width: 900px) { .profile-grid { grid-template-columns: 1fr; } }
+  .profile-card { text-align: center; }
+  .profile-card .avatar { margin: 6px auto 12px; }
+  .profile-card h2 { font-size: 17px; font-weight: 650; }
+  .meta-table { display: grid; grid-template-columns: auto 1fr; gap: 7px 16px; font-size: 12.5px; text-align: left; margin-top: 16px; }
+  .meta-table dt { color: var(--text-faint); }
+  .meta-table dd { margin: 0; font-family: var(--font-mono); font-size: 12px; word-break: break-all; }
+
+  /* ---------- Dialogs ---------- */
+  dialog {
+    border: none; border-radius: var(--radius-lg); padding: 0; width: min(500px, calc(100vw - 32px));
+    background: var(--panel); color: var(--text); box-shadow: var(--shadow-lg);
+  }
+  dialog.wide { width: min(720px, calc(100vw - 32px)); }
+  dialog::backdrop { background: rgba(10, 12, 20, 0.5); }
+  .dialog-head { padding: 18px 22px 2px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .dialog-head h3 { font-size: 16px; font-weight: 650; }
+  .dialog-head p { font-size: 12.5px; color: var(--text-soft); margin-top: 2px; }
+  .dialog-body { padding: 16px 22px; display: flex; flex-direction: column; gap: 14px; max-height: 70vh; overflow-y: auto; }
+  .dialog-foot { padding: 14px 22px 18px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border-soft); flex-wrap: wrap; }
+
+  /* ---------- Toasts ---------- */
+  .toast-region { position: fixed; bottom: 18px; right: 18px; left: 18px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; z-index: 300; pointer-events: none; }
+  .toast {
+    pointer-events: auto; max-width: 380px; padding: 11px 14px; border-radius: var(--radius-md); background: var(--panel);
+    border: 1px solid var(--border); box-shadow: var(--shadow-lg); font-size: 12.5px;
+    display: flex; align-items: flex-start; gap: 9px; animation: toast-in 0.16s ease-out;
+  }
+  @keyframes toast-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .toast .dot { width: 8px; height: 8px; border-radius: 999px; margin-top: 5px; flex-shrink: 0; }
+  .toast.success .dot { background: var(--success); }
+  .toast.error .dot { background: var(--danger); }
+  .toast.info .dot { background: var(--accent); }
+  .toast.pending { border-color: color-mix(in srgb, var(--pending) 40%, var(--border)); }
+  .toast.pending .dot { background: var(--pending); }
+  @media (prefers-reduced-motion: reduce) { .spinner, .toast { animation: none; } }
+
+  /* ---------- Print report ---------- */
+  #print-report { display: none; }
+  @media print {
+    body { background: #fff; color: #000; }
+    .app, .login-screen, .toast-region, dialog, .viz-tip { display: none !important; }
+    #print-report { display: block; font-size: 11pt; color: #000; }
+    #print-report h1 { font-size: 18pt; margin-bottom: 4pt; }
+    #print-report h2 { font-size: 13pt; margin: 16pt 0 6pt; border-bottom: 1px solid #999; padding-bottom: 3pt; }
+    #print-report table { width: 100%; border-collapse: collapse; margin-top: 4pt; page-break-inside: auto; }
+    #print-report th, #print-report td { border: 1px solid #bbb; padding: 3pt 6pt; text-align: left; font-size: 9.5pt; }
+    #print-report th { background: #eee; }
+    #print-report td.r, #print-report th.r { text-align: right; }
+    #print-report .kv { display: grid; grid-template-columns: 180pt 1fr; gap: 2pt 10pt; }
+    #print-report p, #print-report li { font-size: 10pt; line-height: 1.45; }
+    #print-report .small { font-size: 8.5pt; color: #444; }
+    #print-report tr { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ======================= Login ======================= -->
+<section class="login-screen hidden" id="login-screen">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="brand-mark">IA</div>
+      <div>
+        <div style="font-weight:650;">Dash</div>
+        <div class="muted" style="font-size:11.5px;">Institute admin console</div>
+      </div>
+    </div>
+    <h1>Sign in</h1>
+    <p class="lede">Manage your institute's staff, students and engagement reports.</p>
+    <form class="login-form" id="login-form" novalidate>
+      <div class="field">
+        <label for="login-email">Email</label>
+        <input type="email" id="login-email" autocomplete="username" required />
+      </div>
+      <div class="field">
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" autocomplete="current-password" required />
+      </div>
+      <details>
+        <summary class="muted" style="cursor:pointer; font-size:12px;">Have a token already?</summary>
+        <div class="field" style="margin-top:10px;">
+          <label for="login-token">Bearer token</label>
+          <input type="text" id="login-token" placeholder="eyJhbGciOi&hellip;" autocomplete="off" />
+          <span class="field-hint">If filled, this is used instead of email and password.</span>
+        </div>
+      </details>
+      <div class="form-error" id="login-error" role="alert"></div>
+      <button type="submit" class="btn btn-primary btn-block" id="login-submit">Sign in</button>
+    </form>
+    <div class="divider">or</div>
+    <button type="button" class="btn btn-block" id="demo-btn">Explore with sample data</button>
+    <div class="login-foot" id="login-base-url"></div>
+  </div>
+</section>
+
+<!-- ======================= App ======================= -->
+<div class="app hidden" id="app">
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="brand-mark">IA</div>
+      <div class="topbar-title">
+        <strong id="topbar-institute">Institute</strong>
+        <span>Institute admin console</span>
+      </div>
+      <span class="demo-flag hidden" id="demo-flag">Sample data</span>
+    </div>
+    <div class="topbar-right">
+      <div class="inst-switch hidden" id="inst-switch-wrap" title="Visible to super/staff admins only, for testing">
+        <select id="inst-switch" aria-label="Institute"></select>
+      </div>
+      <a class="profile-chip" href="#/profile" id="profile-chip" title="View profile"></a>
+      <button class="icon-btn" id="logout-btn" title="Sign out" aria-label="Sign out">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="shell">
+    <nav class="sidebar" id="sidebar" aria-label="Main">
+      <a class="nav-link" href="#/dashboard" data-route="dashboard">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-link" href="#/staff" data-route="staff">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Staff <span class="nav-count" id="nav-count-staff"></span>
+      </a>
+      <a class="nav-link" href="#/students" data-route="students">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+        Students <span class="nav-count" id="nav-count-students"></span>
+      </a>
+      <a class="nav-link" href="#/events" data-route="events">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+        Events
+      </a>
+      <div class="nav-spacer"></div>
+      <a class="nav-link nav-small" href="#/profile" data-route="profile">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+        Profile
+      </a>
+      <a class="nav-link nav-small" href="#/backend" data-route="backend">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Backend status
+      </a>
+    </nav>
+    <main class="main" id="main"></main>
+  </div>
+</div>
+
+<!-- ======================= Dialogs ======================= -->
+<dialog id="staff-dialog">
+  <form method="dialog" id="staff-form" novalidate>
+    <div class="dialog-head"><div><h3 id="staff-dialog-title">Add staff</h3><p id="staff-dialog-sub">Staff on the sender list can email messages to students.</p></div></div>
+    <div class="dialog-body">
+      <div class="field-grid">
+        <div class="field">
+          <label for="staff-name">Full name</label>
+          <input type="text" id="staff-name" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label for="staff-email">Email</label>
+          <input type="email" id="staff-email" autocomplete="off" required />
+        </div>
+      </div>
+      <label class="check"><input type="checkbox" id="staff-active" checked /><span>Active<small>Allowed to send messages to this institute's students.</small></span></label>
+      <label class="check" id="staff-account-row"><input type="checkbox" id="staff-create-account" /><span>Create a login account<small>Gives this person a staff_admin login. Requires POST /admins/signup permission.</small></span></label>
+      <div class="field hidden" id="staff-password-field">
+        <label for="staff-password" id="staff-password-label">Password</label>
+        <input type="password" id="staff-password" autocomplete="new-password" />
+        <span class="field-hint">At least 6 characters.</span>
+      </div>
+      <div class="form-error" id="staff-error" role="alert"></div>
+    </div>
+    <div class="dialog-foot">
+      <button type="button" class="btn" data-close>Cancel</button>
+      <button type="submit" class="btn btn-primary" id="staff-submit">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="student-dialog">
+  <form method="dialog" id="student-form" novalidate>
+    <div class="dialog-head"><div><h3>Add students</h3><p>Add one or many student emails to the roster. Students sign up in the Dash app with the same email.</p></div></div>
+    <div class="dialog-body">
+      <div class="field">
+        <label for="student-emails">Student emails</label>
+        <textarea id="student-emails" placeholder="alex@school.edu&#10;sam@school.edu, riley@school.edu"></textarea>
+        <span class="field-hint">Separate with commas, spaces or new lines. Duplicates and invalid entries are skipped.</span>
+      </div>
+      <label class="check"><input type="checkbox" id="student-active" checked /><span>Active<small>Can receive staff messages straight away.</small></span></label>
+      <div class="form-error" id="student-error" role="alert"></div>
+    </div>
+    <div class="dialog-foot">
+      <button type="button" class="btn" data-close>Cancel</button>
+      <button type="submit" class="btn btn-primary" id="student-submit">Add to roster</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="confirm-dialog">
+  <form method="dialog" id="confirm-form">
+    <div class="dialog-head"><div><h3 id="confirm-title">Are you sure?</h3><p id="confirm-text"></p></div></div>
+    <div class="dialog-body" id="confirm-extra"></div>
+    <div class="dialog-foot">
+      <button type="button" class="btn" data-close>Cancel</button>
+      <button type="submit" class="btn btn-danger" id="confirm-ok">Confirm</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="detail-dialog" class="wide">
+  <div class="dialog-head"><div><h3 id="detail-title">Student</h3><p id="detail-sub"></p></div><button class="icon-btn" data-close aria-label="Close">&times;</button></div>
+  <div class="dialog-body" id="detail-body"></div>
+</dialog>
+
+<div class="toast-region" id="toast-region" aria-live="polite"></div>
+<div class="viz-tip hidden" id="viz-tip"></div>
+<div id="print-report"></div>
+
+<script>
+/* =========================================================================
+   Configuration — point BASE_URL at your Dash server.
+   ========================================================================= */
+// const BASE_URL = "http://localhost:5000/api/v1";
+const BASE_URL = "https://backend.muruako.com/api/v1";
+const SESSION_KEY = "institute_admin_session";
+const PREF_KEY = "institute_admin_prefs";
+const FETCH_CONCURRENCY = 4;
+
+/* ---------------------------------------------------------------------
+   Backend gaps. Each entry is a feature this page has UI for but the server
+   can't fully serve yet. Pending endpoints are still *called*, so the moment
+   the backend ships them with this contract, the UI starts working.
+   --------------------------------------------------------------------- */
+const PENDING = {
+  roleAuth: {
+    title: "Authorize the institute_admin role",
+    endpoint: "authorizeEntity([... INSTITUTE_ADMIN]) on /institutes, /students, /admins/all, /events/all-by-student, /email2messages/all-by-student, /upload",
+    detail: "Today every admin route allows only super_admin / staff_admin, so an institute_admin token gets 403 everywhere. Each route also needs scoping to the admin's own institute.",
+  },
+  instituteMine: {
+    title: "Resolve the admin's own institute",
+    endpoint: "GET /institutes/mine",
+    detail: "Admins have no institute link. The page falls back to /institutes/all and matches your email against institute.staff / allowedSenders.",
+  },
+  staffLink: {
+    title: "Persist the institute staff list",
+    endpoint: "PATCH /institutes/update/:id { staff }",
+    detail: "InstituteUpdateDtoZodSchema has no `staff` field, so it is silently dropped. Staff membership is shown from staff ∪ allowedSenders until this lands.",
+  },
+  staffCreate: {
+    title: "Institute admins create staff accounts",
+    endpoint: "POST /admins/signup (allow institute_admin, force role=staff_admin + link institute)",
+    detail: "Signup is super_admin only. Whitelisting the email works today; creating the login does not for an institute admin.",
+  },
+  staffStatus: {
+    title: "Disable a staff login",
+    endpoint: "PATCH /admins/update/:id { isActive } + block inactive admins at /admins/signin",
+    detail: "Admin has no isActive field. The Active toggle currently controls the sender whitelist, which already stops a staff member from messaging students.",
+  },
+  studentStatus: {
+    title: "Account-level student status",
+    endpoint: "Student.isActive (per institute)",
+    detail: "The Active toggle currently controls allowedRecipients, which already stops messages reaching the student from this institute. There is no account-level flag.",
+  },
+  studentInvite: {
+    title: "Invite students to the app",
+    endpoint: "POST /institutes/:id/students/invite { emails[] }",
+    detail: "No invite flow exists; students self-onboard through OTP signup.",
+  },
+  scopedStudents: {
+    title: "Institute-scoped student list",
+    endpoint: "GET /institutes/:id/students",
+    detail: "/students/all returns every student on the platform, which the page filters client-side by roster email. That works but leaks other institutes' students to the browser.",
+  },
+  stats: {
+    title: "Dashboard stats in one call",
+    endpoint: "GET /institutes/:id/stats",
+    detail: "Message counts are computed client-side with one /email2messages/all-by-student call per student.",
+  },
+  analytics: {
+    title: "Server-side event analytics",
+    endpoint: "GET /institutes/:id/analytics/events?from=&to=",
+    detail: "Analytics are computed client-side with one /events/all-by-student call per student. Fine for hundreds of students; slow beyond that.",
+  },
+  adminMe: {
+    title: "Self-service profile update",
+    endpoint: "GET/PATCH /admins/me",
+    detail: "/admins/update/:id is super_admin only, so an institute admin can't edit their own name, photo or password yet.",
+  },
+  centralSignin: {
+    title: "Central sign-in for institute admins",
+    endpoint: "POST /auth/signin { entity_type: 'institute_admin' }",
+    detail: "/auth/signin rejects institute_admin with 400, so this page signs in through /admins/signin instead (which works for any admin role).",
+  },
+  reportTime: {
+    title: "Report time field mismatch",
+    endpoint: "Institute.reportTime vs DTO defaultReportTime",
+    detail: "The model stores reportTime, the update DTO accepts defaultReportTime. Shown read-only here.",
+  },
+};
+
+/* ---------------------------------------------------------------------
+   State
+   --------------------------------------------------------------------- */
+const state = {
+  token: null,
+  admin: null,
+  demo: false,
+  institutes: [],
+  institute: null,
+  blocked: null,          // reason string when the role can't load the institute
+  students: null,         // Student docs (all, filtered by roster when used)
+  admins: null,           // Admin docs
+  errors: {},             // resource -> message
+  messages: null,         // Map _id -> message (roster scoped)
+  messagesProgress: null,
+  events: null,           // Map studentId -> events[]
+  eventsProgress: null,
+  observed: {},           // pendingKey -> { status, at }
+  ui: {
+    staffQuery: "", staffFilter: "all",
+    studentQuery: "", studentFilter: "all", selected: new Set(),
+    range: "academic", from: "", to: "", deidentify: true,
+    sortKey: "total", sortDir: -1,
+  },
+};
+
+const $ = (id) => document.getElementById(id);
+
+/* ---------------------------------------------------------------------
+   Utilities
+   --------------------------------------------------------------------- */
+const escapeHtml = (str) =>
+  String(str ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const lower = (s) => String(s || "").trim().toLowerCase();
+const isEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v).trim());
+const uniq = (arr) => [...new Set(arr)];
+const fmtInt = (n) => (n == null || Number.isNaN(n) ? "—" : Number(n).toLocaleString());
+const fmtPct = (n, d = 0) => (n == null || !Number.isFinite(n) ? "—" : `${(n * 100).toFixed(d)}%`);
+const fmtDate = (ms) => {
+  if (!ms) return "—";
+  return new Date(ms).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+};
+const fmtDateTime = (ms) => {
+  if (!ms) return "—";
+  return new Date(ms).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+};
+const unixToMs = (s) => (s ? s * 1000 : null);
+const isoDay = (d) => {
+  const x = new Date(d);
+  return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
+};
+const roleLabel = (r) => String(r || "unknown").replace(/_/g, " ");
+const plural = (n, one, many) => `${fmtInt(n)} ${n === 1 ? one : (many || one + "s")}`;
+
+function parseWhen(value) {
+  if (value == null || value === "") return null;
+  if (typeof value === "number") return value < 1e12 ? value * 1000 : value;
+  const s = String(value);
+  const compact = s.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})(Z)?)?$/);
+  if (compact) {
+    const [, y, mo, d, h = "00", mi = "00", se = "00", z] = compact;
+    const iso = `${y}-${mo}-${d}T${h}:${mi}:${se}${z ? "Z" : ""}`;
+    const t = Date.parse(iso);
+    return Number.isNaN(t) ? null : t;
+  }
+  const t = Date.parse(s);
+  return Number.isNaN(t) ? null : t;
+}
+
+function toast(message, type = "info", ms = 4600) {
+  const node = document.createElement("div");
+  node.className = `toast ${type}`;
+  node.innerHTML = `<span class="dot"></span><span>${escapeHtml(message)}</span>`;
+  $("toast-region").appendChild(node);
+  setTimeout(() => node.remove(), type === "pending" ? 7000 : ms);
+}
+
+function avatarHtml(person, size = 32) {
+  const label = person?.name || person?.email || "?";
+  const initials = label.split(/[\s@._-]+/).filter(Boolean).slice(0, 2).map((s) => s[0].toUpperCase()).join("") || "?";
+  const img = person?.image && !/default\/default\.png$/i.test(person.image) ? person.image : null;
+  return `<span class="avatar" style="width:${size}px;height:${size}px;font-size:${Math.round(size * 0.38)}px">
+    <span>${escapeHtml(initials)}</span>${img ? `<img src="${escapeHtml(img)}" alt="" onerror="this.remove()">` : ""}
+  </span>`;
+}
+
+function downloadFile(filename, content, type = "text/csv;charset=utf-8") {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function toCsv(headers, rows) {
+  const cell = (v) => {
+    const s = v == null ? "" : String(v);
+    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  return [headers.map(cell).join(","), ...rows.map((r) => r.map(cell).join(","))].join("\r\n");
+}
+const slug = (s) => lower(s).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "institute";
+
+async function pool(items, limit, worker, onProgress) {
+  const results = new Array(items.length);
+  let next = 0, done = 0;
+  async function run() {
+    while (next < items.length) {
+      const i = next++;
+      try { results[i] = await worker(items[i], i); } catch (err) { results[i] = { __error: err }; }
+      done++;
+      onProgress && onProgress(done, items.length);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, run));
+  return results;
+}
+
+function loadPrefs() {
+  try { return JSON.parse(localStorage.getItem(PREF_KEY) || "{}"); } catch { return {}; }
+}
+function savePrefs(patch) {
+  try { localStorage.setItem(PREF_KEY, JSON.stringify({ ...loadPrefs(), ...patch })); } catch { /* storage unavailable */ }
+}
+
+/* ---------------------------------------------------------------------
+   API client
+   --------------------------------------------------------------------- */
+class ApiError extends Error {
+  constructor(message, status, pendingKey) { super(message); this.status = status; this.pendingKey = pendingKey; }
+}
+
+async function api(path, { method = "GET", body, form, pendingKey } = {}) {
+  if (state.demo) return mockApi(path, method, body, pendingKey);
+  const headers = {};
+  if (!form) headers["Content-Type"] = "application/json";
+  if (state.token) headers.Authorization = `Bearer ${state.token}`;
+  let res;
+  try {
+    res = await fetch(`${BASE_URL}${path}`, {
+      method, headers,
+      body: form ? form : body !== undefined ? JSON.stringify(body) : undefined,
+    });
+  } catch {
+    throw new ApiError(`Could not reach ${BASE_URL} — is the server running?`, 0);
+  }
+  let payload = null;
+  try { payload = await res.json(); } catch { /* empty body */ }
+  if (!res.ok) {
+    if (res.status === 401 && path !== "/admins/signin") {
+      toast("Session expired. Please sign in again.", "error");
+      signOut();
+    }
+    throw new ApiError((payload && payload.message) || `Request failed (${res.status})`, res.status, pendingKey);
+  }
+  return payload;
+}
+
+/** Record what happened and turn backend gaps into a readable message. */
+function describeError(err, feature) {
+  if (!(err instanceof ApiError)) return { pending: false, msg: err.message || String(err) };
+  if (err.pendingKey && (err.status === 404 || err.status === 405)) {
+    state.observed[err.pendingKey] = { status: "missing", at: Date.now() };
+    return { pending: true, msg: `Backend pending: ${PENDING[err.pendingKey].endpoint} isn't available yet (${feature}).` };
+  }
+  if (err.status === 403) {
+    const key = err.pendingKey || (state.admin?.role === "institute_admin" ? "roleAuth" : null);
+    if (key) state.observed[key] = { status: "forbidden", at: Date.now() };
+    return { pending: true, msg: `Backend pending: your role (${roleLabel(state.admin?.role)}) isn't allowed to ${feature} yet.` };
+  }
+  return { pending: false, msg: err.message };
+}
+function reportError(err, feature) {
+  const d = describeError(err, feature);
+  toast(d.msg, d.pending ? "pending" : "error");
+  return d;
+}
+function markOk(key) { state.observed[key] = { status: "ok", at: Date.now() }; }
+
+/* ---------------------------------------------------------------------
+   Session
+   --------------------------------------------------------------------- */
+function saveSession() {
+  try { localStorage.setItem(SESSION_KEY, JSON.stringify({ token: state.token, admin: state.admin, demo: state.demo })); } catch { /* ignore */ }
+}
+function loadSession() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+    if (s && (s.token || s.demo)) { state.token = s.token; state.admin = s.admin; state.demo = !!s.demo; }
+  } catch { /* ignore */ }
+}
+function resetData() {
+  Object.assign(state, { institutes: [], institute: null, blocked: null, students: null, admins: null, errors: {}, messages: null, messagesProgress: null, events: null, eventsProgress: null });
+  state.ui.selected = new Set();
+}
+function signOut() {
+  state.token = null; state.admin = null; state.demo = false;
+  resetData();
+  try { localStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
+  showLogin();
+}
+function decodeJwt(token) {
+  try {
+    const part = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    return JSON.parse(decodeURIComponent(escape(atob(part))));
+  } catch { return null; }
+}
+
+/* ---------------------------------------------------------------------
+   Login screen
+   --------------------------------------------------------------------- */
+function showLogin() {
+  $("app").classList.add("hidden");
+  $("login-screen").classList.remove("hidden");
+  $("login-error").textContent = "";
+  $("login-base-url").textContent = `Server: ${BASE_URL}`;
+  setTimeout(() => $("login-email").focus(), 30);
+}
+
+$("login-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const err = $("login-error");
+  err.textContent = "";
+  const token = $("login-token").value.trim();
+  const email = $("login-email").value.trim();
+  const password = $("login-password").value;
+  state.demo = false;
+
+  if (token) {
+    const claims = decodeJwt(token);
+    if (!claims) { err.textContent = "That token couldn't be read."; return; }
+    state.token = token;
+    state.admin = { _id: claims._id, email: claims.email, role: claims.role, name: claims.name || claims.email };
+    saveSession();
+    enterApp();
+    return;
+  }
+  if (!isEmail(email)) { err.textContent = "Enter a valid email address."; return; }
+  if (!password) { err.textContent = "Enter your password."; return; }
+
+  const btn = $("login-submit");
+  btn.disabled = true; btn.textContent = "Signing in…";
+  try {
+    // /auth/signin rejects institute_admin (see PENDING.centralSignin); /admins/signin accepts every admin role.
+    const res = await api("/admins/signin", { method: "POST", body: { email, password } });
+    state.token = res.data.token;
+    state.admin = res.data.admin;
+    if (state.admin.role === "student") throw new ApiError("Students can't use the admin console.", 403);
+    saveSession();
+    $("login-form").reset();
+    enterApp();
+  } catch (ex) {
+    state.token = null;
+    err.textContent = ex.status === 401 ? "Email or password is incorrect." : ex.message;
+  } finally {
+    btn.disabled = false; btn.textContent = "Sign in";
+  }
+});
+
+$("demo-btn").addEventListener("click", () => {
+  state.demo = true;
+  state.token = "demo";
+  state.admin = { ...DEMO.admin };
+  saveSession();
+  enterApp();
+});
+
+$("logout-btn").addEventListener("click", () => { signOut(); toast("Signed out.", "info"); });
+
+/* ---------------------------------------------------------------------
+   App boot + data loading
+   --------------------------------------------------------------------- */
+async function enterApp() {
+  if (state.demo && !DEMO.ready) buildDemo();
+  resetData();
+  $("login-screen").classList.add("hidden");
+  $("app").classList.remove("hidden");
+  $("demo-flag").classList.toggle("hidden", !state.demo);
+  renderTopbar();
+  if (!location.hash || location.hash === "#/" || location.hash === "#") location.hash = "#/dashboard";
+  $("main").innerHTML = `<div class="center-loading"><div class="spinner"></div> Loading your institute…</div>`;
+  await loadCore();
+  render();
+}
+
+async function loadCore() {
+  state.blocked = null;
+  const myEmail = lower(state.admin?.email);
+  let inst = null;
+
+  // 1) The endpoint we want: the admin's own institute.
+  try {
+    const res = await api("/institutes/mine", { pendingKey: "instituteMine" });
+    inst = res.data; markOk("instituteMine");
+  } catch (err) {
+    if (err.status && err.status !== 404 && err.status !== 403) reportError(err, "load your institute");
+    describeError(err, "load your institute");
+  }
+
+  // 2) Fallback: list institutes and match by email.
+  if (!inst) {
+    try {
+      const res = await api(`/institutes/all?page=1&limit=500`);
+      state.institutes = res.data || [];
+      const mine = state.institutes.filter((i) =>
+        (i.staff || []).map(lower).includes(myEmail) || (i.allowedSenders || []).map(lower).includes(myEmail));
+      const pref = loadPrefs().instituteId;
+      if (state.admin.role === "institute_admin") {
+        inst = mine[0] || null;
+        if (!inst) state.blocked = "notLinked";
+      } else {
+        inst = state.institutes.find((i) => i._id === pref) || mine[0] || state.institutes[0] || null;
+        if (!inst) state.blocked = "none";
+      }
+    } catch (err) {
+      const d = describeError(err, "read institutes");
+      state.blocked = d.pending ? "forbidden" : "error";
+      state.errors.institute = d.msg;
+    }
+  }
+
+  if (inst) {
+    try {
+      const res = await api(`/institutes/find/${inst._id}`);
+      inst = res.data || inst;
+    } catch { /* keep list copy */ }
+    state.institute = inst;
+  }
+  renderTopbar();
+  if (!state.institute) return;
+
+  await Promise.all([loadStudents(), loadAdmins()]);
+}
+
+async function refreshInstitute() {
+  const res = await api(`/institutes/find/${state.institute._id}`);
+  state.institute = res.data;
+  const i = state.institutes.findIndex((x) => x._id === state.institute._id);
+  if (i !== -1) state.institutes[i] = state.institute;
+}
+
+async function loadStudents() {
+  try {
+    const res = await api(`/institutes/${state.institute._id}/students`, { pendingKey: "scopedStudents" });
+    state.students = res.data || []; markOk("scopedStudents"); return;
+  } catch (err) { describeError(err, "load the institute's students"); }
+  try {
+    const res = await api(`/students/all?page=1&limit=5000`);
+    state.students = res.data || [];
+    delete state.errors.students;
+  } catch (err) {
+    state.students = [];
+    state.errors.students = describeError(err, "list student accounts").msg;
+  }
+}
+
+async function loadAdmins() {
+  try {
+    const res = await api(`/admins/all?page=1&limit=1000`);
+    state.admins = res.data || [];
+    delete state.errors.admins;
+  } catch (err) {
+    state.admins = [];
+    state.errors.admins = describeError(err, "list staff accounts").msg;
+  }
+}
+
+/** Write institute fields, then reload the institute so counts stay true. */
+async function patchInstitute(body, successMsg) {
+  await api(`/institutes/update/${state.institute._id}`, { method: "PATCH", body });
+  await refreshInstitute();
+  if (successMsg) toast(successMsg, "success");
+}
+
+/* ---------------------------------------------------------------------
+   Derived data
+   --------------------------------------------------------------------- */
+function rosterRows() {
+  const inst = state.institute;
+  if (!inst) return [];
+  const recipients = new Set((inst.allowedRecipients || []).map(lower));
+  const emails = uniq([...(inst.allStudents || []), ...(inst.allowedRecipients || [])].map(lower).filter(Boolean));
+  const byEmail = new Map((state.students || []).map((s) => [lower(s.email), s]));
+  return emails.map((email) => {
+    const student = byEmail.get(email) || null;
+    return { email, student, active: recipients.has(email), onRoster: (inst.allStudents || []).map(lower).includes(email) };
+  }).sort((a, b) => (a.student?.name || a.email).localeCompare(b.student?.name || b.email));
+}
+
+function inactiveStaffKey() { return `ia_inactive_staff_${state.demo ? "demo" : state.institute?._id}`; }
+function getInactiveStaff() {
+  try { return JSON.parse(localStorage.getItem(inactiveStaffKey()) || "{}"); } catch { return {}; }
+}
+function setInactiveStaff(map) {
+  try { localStorage.setItem(inactiveStaffKey(), JSON.stringify(map)); } catch { /* ignore */ }
+}
+
+function staffNamesKey() { return `ia_staff_names_${state.demo ? "demo" : state.institute?._id}`; }
+function getStaffNames() {
+  try { return JSON.parse(localStorage.getItem(staffNamesKey()) || "{}"); } catch { return {}; }
+}
+function setStaffNames(map) {
+  try { localStorage.setItem(staffNamesKey(), JSON.stringify(map)); } catch { /* ignore */ }
+}
+
+function staffRows() {
+  const inst = state.institute;
+  if (!inst) return [];
+  const senders = new Set((inst.allowedSenders || []).map(lower));
+  const linked = new Set((inst.staff || []).map(lower));
+  const inactive = getInactiveStaff();
+  const names = getStaffNames();
+  const emails = uniq([...senders, ...linked, ...Object.keys(inactive)]).filter(Boolean);
+  const byEmail = new Map((state.admins || []).map((a) => [lower(a.email), a]));
+  return emails.map((email) => {
+    const account = byEmail.get(email) || null;
+    return {
+      email, account,
+      name: account?.name || names[email] || inactive[email]?.name || "",
+      active: senders.has(email),
+      linked: linked.has(email),
+      rememberedOnly: !senders.has(email) && !linked.has(email),
+    };
+  }).sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email));
+}
+
+function rosterStudentsWithAccounts() {
+  return rosterRows().filter((r) => r.student).map((r) => r.student);
+}
+
+/* ---------------------------------------------------------------------
+   Topbar + router
+   --------------------------------------------------------------------- */
+function renderTopbar() {
+  const a = state.admin || {};
+  $("profile-chip").innerHTML = `${avatarHtml(a, 30)}<span class="who"><strong>${escapeHtml(a.name || a.email || "Admin")}</strong><span>${escapeHtml(roleLabel(a.role))}</span></span>`;
+  $("topbar-institute").textContent = state.institute?.name || (state.blocked ? "No institute" : "Institute");
+
+  const wrap = $("inst-switch-wrap");
+  const canSwitch = a.role !== "institute_admin" && state.institutes.length > 1;
+  wrap.classList.toggle("hidden", !canSwitch);
+  if (canSwitch) {
+    $("inst-switch").innerHTML = state.institutes.map((i) =>
+      `<option value="${escapeHtml(i._id)}" ${i._id === state.institute?._id ? "selected" : ""}>${escapeHtml(i.name)}</option>`).join("");
+  }
+  $("nav-count-staff").textContent = state.institute ? staffRows().filter((r) => r.active).length || "" : "";
+  $("nav-count-students").textContent = state.institute ? rosterRows().length || "" : "";
+}
+
+$("inst-switch").addEventListener("change", async (e) => {
+  savePrefs({ instituteId: e.target.value });
+  const target = state.institutes.find((i) => i._id === e.target.value);
+  resetDataKeepList();
+  state.institute = target;
+  $("main").innerHTML = `<div class="center-loading"><div class="spinner"></div> Switching institute…</div>`;
+  try { await refreshInstitute(); } catch { /* use list copy */ }
+  await Promise.all([loadStudents(), loadAdmins()]);
+  renderTopbar(); render();
+});
+function resetDataKeepList() {
+  const list = state.institutes;
+  resetData();
+  state.institutes = list;
+}
+
+const ROUTES = { dashboard: renderDashboard, staff: renderStaff, students: renderStudents, events: renderEvents, profile: renderProfile, backend: renderBackend };
+function currentRoute() {
+  const r = (location.hash.replace(/^#\/?/, "").split("?")[0]) || "dashboard";
+  return ROUTES[r] ? r : "dashboard";
+}
+function render() {
+  if ($("app").classList.contains("hidden")) return;
+  const route = currentRoute();
+  document.querySelectorAll(".nav-link").forEach((n) => n.classList.toggle("active", n.dataset.route === route));
+  renderTopbar();
+  const needsInstitute = !["profile", "backend"].includes(route);
+  if (needsInstitute && !state.institute) { renderBlocked(); return; }
+  ROUTES[route]();
+  window.scrollTo({ top: 0 });
+}
+window.addEventListener("hashchange", render);
+
+const ICON_PENDING = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>`;
+const ICON_INFO = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>`;
+const ICON_WARN = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4"/><path d="M12 17h.01"/><circle cx="12" cy="12" r="10"/></svg>`;
+const ICON_SEARCH = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>`;
+
+function pendingNote(keys, lead) {
+  const list = keys.map((k) => `<code class="mono" style="font-size:11.5px;">${escapeHtml(PENDING[k].endpoint)}</code>`).join(", ");
+  return `<div class="note note-pending">${ICON_PENDING}<div><strong>Backend pending.</strong> ${lead} Needs ${list}. <a href="#/backend">Details</a></div></div>`;
+}
+function errorNote(msg) {
+  return `<div class="note note-warn">${ICON_WARN}<div>${escapeHtml(msg)}</div></div>`;
+}
+
+function renderBlocked() {
+  const reasons = {
+    forbidden: {
+      title: "Your account can sign in, but the server doesn't let institute admins read data yet",
+      body: "The institute_admin role exists, but every admin route currently allows only super_admin and staff_admin, so each request returns 403. Every page here is built and will start working once those routes authorize your role and scope it to your institute.",
+      keys: ["roleAuth", "instituteMine"],
+    },
+    notLinked: {
+      title: "Your account isn't linked to an institute",
+      body: "We looked for an institute whose staff or sender list includes your email and found none. Ask a super admin to add you, or wait for the institute link endpoint.",
+      keys: ["instituteMine", "staffLink"],
+    },
+    none: { title: "No institutes exist yet", body: "Create one from the Institute Registry page first.", keys: [] },
+    error: { title: "Couldn't load your institute", body: state.errors.institute || "Unknown error.", keys: [] },
+  };
+  const r = reasons[state.blocked] || reasons.error;
+  $("main").innerHTML = `
+    <div class="page-head"><div><h1>${escapeHtml(r.title)}</h1><p>${escapeHtml(r.body)}</p></div></div>
+    ${r.keys.length ? pendingNote(r.keys, "This page can't load your institute yet.") : ""}
+    <div class="panel">
+      <div class="panel-title">What you can do now</div>
+      <p class="panel-desc">Preview every page with sample data, check which backend pieces are missing, or update your profile.</p>
+      <div class="page-actions">
+        <button class="btn btn-primary" id="blocked-demo">Explore with sample data</button>
+        <a class="btn" href="#/backend">Backend status</a>
+        <a class="btn" href="#/profile">My profile</a>
+        <button class="btn btn-ghost" id="blocked-retry">Retry</button>
+      </div>
+    </div>`;
+  $("blocked-demo").onclick = () => { $("demo-btn").click(); };
+  $("blocked-retry").onclick = async () => { $("main").innerHTML = `<div class="center-loading"><div class="spinner"></div> Retrying…</div>`; await loadCore(); render(); };
+}
+
+/* ---------------------------------------------------------------------
+   Tooltip layer for charts (any element with data-tip)
+   --------------------------------------------------------------------- */
+(function tooltipLayer() {
+  const tip = $("viz-tip");
+  document.addEventListener("mousemove", (e) => {
+    const t = e.target.closest && e.target.closest("[data-tip]");
+    if (!t) { tip.classList.add("hidden"); return; }
+    tip.textContent = t.dataset.tip;
+    tip.classList.remove("hidden");
+    const pad = 14, w = tip.offsetWidth, h = tip.offsetHeight;
+    let x = e.clientX + pad, y = e.clientY - h - pad;
+    if (x + w > window.innerWidth - 8) x = e.clientX - w - pad;
+    if (y < 8) y = e.clientY + pad;
+    tip.style.left = `${x}px`; tip.style.top = `${y}px`;
+  });
+  document.addEventListener("scroll", () => tip.classList.add("hidden"), true);
+})();
+
+/* ---------------------------------------------------------------------
+   Chart builders (plain HTML; single hue + neutral, hover + table view)
+   --------------------------------------------------------------------- */
+function niceMax(v) {
+  if (v <= 4) return 4;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  const n = v / mag;
+  const step = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
+  return step * mag;
+}
+/**
+ * cols: [{ label, a, b?, tip }] — a = highlighted series (bottom), b = remainder (top, neutral).
+ */
+function columnChart(cols, { aName, bName, tableHead } = {}) {
+  if (!cols.length) return `<div class="empty">No data in this period.</div>`;
+  const max = niceMax(Math.max(1, ...cols.map((c) => c.a + (c.b || 0))));
+  const lines = [0.5, 1].map((f) => `<div class="gridline" style="bottom:${f * 100}%"><span>${fmtInt(Math.round(max * f))}</span></div>`).join("");
+  const showEvery = cols.length > 16 ? Math.ceil(cols.length / 12) : 1;
+  const legend = bName ? `<div class="legend"><span><i style="background:var(--series-1)"></i>${escapeHtml(aName)}</span><span><i style="background:var(--series-muted)"></i>${escapeHtml(bName)}</span></div>` : "";
+  return `
+    ${legend}
+    <div class="chart">
+      <div class="bars">${lines}
+        ${cols.map((c) => {
+          const total = c.a + (c.b || 0);
+          const ha = (c.a / max) * 100, hb = ((c.b || 0) / max) * 100;
+          return `<div class="bar-col" data-tip="${escapeHtml(c.tip)}">
+            ${hb > 0 ? `<div class="seg s0 top" style="height:${hb}%"></div>` : ""}
+            ${ha > 0 ? `<div class="seg s1 ${hb > 0 ? "" : "top"}" style="height:${ha}%"></div>` : ""}
+            ${total === 0 ? `<div style="height:1px"></div>` : ""}
+          </div>`;
+        }).join("")}
+      </div>
+      <div class="bar-labels">${cols.map((c, i) => `<span>${i % showEvery === 0 ? escapeHtml(c.label) : ""}</span>`).join("")}</div>
+    </div>
+    <details class="table-view"><summary>View as table</summary>
+      <div class="table-wrap"><table class="data"><thead><tr>${(tableHead || ["Period", aName, bName].filter(Boolean)).map((h, i) => `<th class="${i ? "r" : ""}">${escapeHtml(h)}</th>`).join("")}</tr></thead>
+      <tbody>${cols.map((c) => `<tr><td>${escapeHtml(c.fullLabel || c.label)}</td><td class="r num">${fmtInt(c.a)}</td>${bName ? `<td class="r num">${fmtInt(c.b || 0)}</td>` : ""}</tr>`).join("")}</tbody></table></div>
+    </details>`;
+}
+function hbarChart(items) {
+  const max = Math.max(1, ...items.map((i) => i.value));
+  return `<div class="hbars">${items.map((i) => `
+    <div class="hbar" data-tip="${escapeHtml(i.tip || `${i.label}: ${fmtInt(i.value)}`)}">
+      <span>${escapeHtml(i.label)}</span>
+      <div class="track"><div class="fill" style="width:${(i.value / max) * 100}%"></div></div>
+      <span class="val">${escapeHtml(i.display ?? fmtInt(i.value))}</span>
+    </div>`).join("")}</div>`;
+}
+
+/* =====================================================================
+   DASHBOARD
+   ===================================================================== */
+function renderDashboard() {
+  const inst = state.institute;
+  const roster = rosterRows();
+  const staff = staffRows();
+  const withAccount = roster.filter((r) => r.student);
+  const verified = withAccount.filter((r) => r.student.is_account_verified).length;
+  const activeStudents = roster.filter((r) => r.active).length;
+  const activeStaff = staff.filter((s) => s.active).length;
+
+  const m = messageStats();
+  const msgValue = state.messages ? fmtInt(m.total) : state.messagesProgress ? `<span class="spinner" style="display:inline-block;width:20px;height:20px"></span>` : "—";
+  const msgSub = state.messages
+    ? `${fmtInt(m.last30)} in the last 30 days · ${fmtInt(m.deliveries)} deliveries`
+    : state.messagesProgress ? `Counting… ${state.messagesProgress.done}/${state.messagesProgress.total} students` : "Not counted yet";
+
+  $("main").innerHTML = `
+    <div class="page-head">
+      <div>
+        <h1>${escapeHtml(inst.name)}</h1>
+        <p>
+          <span class="pill ${inst.isActive ? "pill-success" : "pill-muted"}"><span class="pill-dot"></span>${inst.isActive ? "Active institute" : "Inactive institute"}</span>
+          <span class="muted" style="margin-left:8px;">Reports ${escapeHtml(reportLabel(inst.reportTime || inst.defaultReportTime))} · Since ${fmtDate(unixToMs(inst.createdAt))}</span>
+        </p>
+      </div>
+      <div class="page-actions">
+        <button class="btn" id="dash-refresh">Refresh</button>
+        <a class="btn btn-primary" href="#/events">Engagement report</a>
+      </div>
+    </div>
+
+    ${state.errors.students ? errorNote(`Student accounts: ${state.errors.students}`) : ""}
+    ${state.errors.admins ? errorNote(`Staff accounts: ${state.errors.admins}`) : ""}
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="kpi-label">Students</div>
+        <div class="kpi-value">${fmtInt(roster.length)}</div>
+        <div class="kpi-sub">${fmtInt(activeStudents)} active · ${fmtInt(withAccount.length)} signed up</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Staff</div>
+        <div class="kpi-value">${fmtInt(staff.length)}</div>
+        <div class="kpi-sub">${fmtInt(activeStaff)} can send messages</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Messages sent</div>
+        <div class="kpi-value" id="kpi-messages">${msgValue}</div>
+        <div class="kpi-sub" id="kpi-messages-sub">${msgSub}</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Verified accounts</div>
+        <div class="kpi-value">${withAccount.length ? fmtPct(verified / withAccount.length) : "—"}</div>
+        <div class="kpi-sub">${fmtInt(verified)} of ${fmtInt(withAccount.length)} signed-up students</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-title-row"><span class="panel-title">Messages per week</span><span class="muted" style="font-size:12px;">Last 12 weeks</span></div>
+        <p class="panel-desc">Unique staff emails delivered to your students through Dash.</p>
+        <div id="dash-msg-chart">${state.messages ? columnChart(m.weekly, { aName: "Messages", tableHead: ["Week of", "Messages"] }) : `<div class="empty">${state.messagesProgress ? "Counting messages…" : "—"}</div>`}</div>
+      </div>
+      <div class="panel">
+        <div class="panel-title-row"><span class="panel-title">Recent messages</span></div>
+        <p class="panel-desc">Latest emails your staff sent to students.</p>
+        <div class="list" id="dash-recent">${recentMessagesHtml(m.recent)}</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-title-row"><span class="panel-title">Roster health</span><a href="#/students" class="btn btn-sm btn-ghost">Open students</a></div>
+        <p class="panel-desc">Students who may not be getting messages yet.</p>
+        ${hbarChart([
+          { label: "Signed up", value: withAccount.length },
+          { label: "Not signed up", value: roster.length - withAccount.length },
+          { label: "Unverified", value: withAccount.length - verified },
+          { label: "Inactive", value: roster.length - activeStudents },
+        ])}
+      </div>
+      <div class="panel">
+        <div class="panel-title-row"><span class="panel-title">Top senders</span><a href="#/staff" class="btn btn-sm btn-ghost">Open staff</a></div>
+        <p class="panel-desc">Staff who sent the most messages.</p>
+        <div id="dash-senders">${state.messages ? (m.senders.length ? hbarChart(m.senders.slice(0, 6)) : `<div class="empty">No messages yet.</div>`) : `<div class="empty">—</div>`}</div>
+      </div>
+    </div>
+    ${state.demo ? "" : pendingNote(["stats"], "Message totals are counted in the browser, one request per student.")}
+  `;
+  $("dash-refresh").onclick = async () => {
+    state.messages = null;
+    $("main").innerHTML = `<div class="center-loading"><div class="spinner"></div> Refreshing…</div>`;
+    try { await refreshInstitute(); } catch (err) { reportError(err, "refresh the institute"); }
+    await Promise.all([loadStudents(), loadAdmins()]);
+    render();
+  };
+  if (!state.messages && !state.messagesProgress) loadMessages();
+}
+
+function reportLabel(v) {
+  return ({ "2hrs": "every 2 hours", "6hrs": "every 6 hours", "12hrs": "every 12 hours", "24hrs": "every 24 hours" })[v] || "every 24 hours";
+}
+
+async function loadMessages() {
+  const students = rosterStudentsWithAccounts();
+  state.messagesProgress = { done: 0, total: students.length };
+  const all = new Map();
+
+  try {
+    const res = await api(`/institutes/${state.institute._id}/stats`, { pendingKey: "stats" });
+    markOk("stats");
+    void res; // when the stats endpoint ships, map it here; the per-student path below remains the fallback.
+  } catch (err) { describeError(err, "load dashboard stats"); }
+
+  let forbidden = null;
+  await pool(students, FETCH_CONCURRENCY, async (s) => {
+    try {
+      const res = await api(`/email2messages/all-by-student/${s._id}`);
+      (res.data || []).forEach((msg) => all.set(String(msg._id), msg));
+    } catch (err) { if (err.status === 403) forbidden = err; }
+  }, (done, total) => {
+    state.messagesProgress = { done, total };
+    if (currentRoute() === "dashboard") {
+      const sub = $("kpi-messages-sub");
+      if (sub) sub.textContent = `Counting… ${done}/${total} students`;
+    }
+  });
+  if (forbidden) reportError(forbidden, "read student messages");
+  state.messages = all;
+  state.messagesProgress = null;
+  if (currentRoute() === "dashboard") renderDashboard();
+}
+
+function messageStats() {
+  const out = { total: 0, last30: 0, deliveries: 0, weekly: [], recent: [], senders: [] };
+  if (!state.messages || !state.institute) return out;
+  const inst = state.institute;
+  const staffEmails = new Set([...(inst.allowedSenders || []), ...(inst.staff || []), ...Object.keys(getInactiveStaff())].map(lower));
+  const roster = new Set(rosterRows().map((r) => r.email));
+  const msgs = [...state.messages.values()].filter((m) => !staffEmails.size || staffEmails.has(lower(m.senderEmail)));
+  const now = Date.now();
+  const startOfWeek = (t) => { const d = new Date(t); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.getTime(); };
+  const thisWeek = startOfWeek(now);
+  const weeks = Array.from({ length: 12 }, (_, i) => thisWeek - (11 - i) * 7 * 864e5);
+  const weekCounts = new Map(weeks.map((w) => [w, 0]));
+  const senderCounts = new Map();
+
+  msgs.forEach((m) => {
+    const t = unixToMs(m.timestamp || m.createdAt);
+    out.total++;
+    out.deliveries += (m.recipients || []).filter((r) => roster.has(lower(r))).length;
+    if (t && now - t <= 30 * 864e5) out.last30++;
+    if (t) { const w = startOfWeek(t); if (weekCounts.has(w)) weekCounts.set(w, weekCounts.get(w) + 1); }
+    const s = lower(m.senderEmail) || "unknown";
+    senderCounts.set(s, (senderCounts.get(s) || 0) + 1);
+  });
+  out.weekly = weeks.map((w) => {
+    const label = new Date(w).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    const n = weekCounts.get(w);
+    return { label, fullLabel: label, a: n, tip: `Week of ${label}\n${plural(n, "message")}` };
+  });
+  const adminByEmail = new Map((state.admins || []).map((a) => [lower(a.email), a]));
+  out.senders = [...senderCounts.entries()].sort((a, b) => b[1] - a[1]).map(([email, n]) => {
+    const name = adminByEmail.get(email)?.name || email.split("@")[0];
+    return { label: name, value: n, tip: `${name} (${email})\n${plural(n, "message")}` };
+  });
+  out.recent = msgs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)).slice(0, 6);
+  return out;
+}
+
+function recentMessagesHtml(list) {
+  if (!state.messages) return `<div class="empty">${state.messagesProgress ? "Loading…" : "—"}</div>`;
+  if (!list.length) return `<div class="empty">No messages sent yet.</div>`;
+  const roster = new Set(rosterRows().map((r) => r.email));
+  return list.map((m) => {
+    const reach = (m.recipients || []).filter((r) => roster.has(lower(r))).length;
+    return `<div class="list-item">
+      <div style="min-width:0;"><div class="t">${escapeHtml(m.subject || "(no subject)")}</div><div class="s">${escapeHtml(m.senderEmail || "unknown sender")} · ${plural(reach, "student")}</div></div>
+      <div class="s" style="white-space:nowrap;">${fmtDateTime(unixToMs(m.timestamp))}</div>
+    </div>`;
+  }).join("");
+}
+
+/* =====================================================================
+   STAFF
+   ===================================================================== */
+function renderStaff() {
+  const all = staffRows();
+  const q = lower(state.ui.staffQuery);
+  const f = state.ui.staffFilter;
+  const rows = all.filter((r) =>
+    (!q || lower(r.name).includes(q) || r.email.includes(q)) &&
+    (f === "all" || (f === "active" ? r.active : !r.active)));
+
+  $("main").innerHTML = `
+    <div class="page-head">
+      <div><h1>Staff</h1><p>People who can email messages to your students. Deactivating someone removes them from the sender list right away.</p></div>
+      <div class="page-actions">
+        <button class="btn" id="staff-export">Export CSV</button>
+        <button class="btn btn-primary" id="staff-add">+ Add staff</button>
+      </div>
+    </div>
+    ${state.errors.admins ? errorNote(`Couldn't load staff accounts, so names and roles may be missing. ${state.errors.admins}`) : ""}
+    ${pendingNote(["staffLink", "staffStatus"], "Active/inactive works today through the sender list; disabling a staff login and saving the staff list need backend work.")}
+    <div class="panel">
+      <div class="toolbar">
+        <div class="search">${ICON_SEARCH}<input type="text" id="staff-q" placeholder="Search name or email" value="${escapeHtml(state.ui.staffQuery)}" /></div>
+        <div class="segmented" id="staff-filter">
+          ${["all", "active", "inactive"].map((k) => `<button type="button" data-v="${k}" class="${f === k ? "active" : ""}">${k[0].toUpperCase() + k.slice(1)}</button>`).join("")}
+        </div>
+        <span class="toolbar-count">${fmtInt(rows.length)} of ${fmtInt(all.length)}</span>
+      </div>
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr><th>Staff member</th><th>Login</th><th>Added via</th><th>Active</th><th class="r">Actions</th></tr></thead>
+          <tbody>
+            ${rows.length ? rows.map((r) => `
+              <tr data-email="${escapeHtml(r.email)}">
+                <td><div class="person">${avatarHtml({ name: r.name, email: r.email, image: r.account?.image }, 32)}
+                  <div class="person-text"><strong>${escapeHtml(r.name || r.email.split("@")[0])}</strong><span>${escapeHtml(r.email)}</span></div></div></td>
+                <td>${r.account ? `<span class="pill pill-accent">${escapeHtml(roleLabel(r.account.role))}</span>` : `<span class="pill pill-muted">No login</span>`}</td>
+                <td class="soft" style="font-size:12px;">${r.linked ? "Staff list" : r.active ? "Sender list" : "This browser"}</td>
+                <td><label class="switch"><input type="checkbox" data-act="toggle" ${r.active ? "checked" : ""} aria-label="Active" /><span class="track"></span><span>${r.active ? "Active" : "Inactive"}</span></label></td>
+                <td><div class="row-actions">
+                  <button class="btn btn-sm btn-ghost" data-act="edit">Edit</button>
+                  <button class="btn btn-sm btn-ghost btn-danger" data-act="remove">Remove</button>
+                </div></td>
+              </tr>`).join("") : `<tr><td colspan="5"><div class="empty">${all.length ? "No staff match your filters." : "No staff yet. Add the first one."}</div></td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+
+  $("staff-q").oninput = (e) => { state.ui.staffQuery = e.target.value; renderStaffKeepFocus("staff-q"); };
+  $("staff-filter").onclick = (e) => { const b = e.target.closest("button"); if (!b) return; state.ui.staffFilter = b.dataset.v; renderStaff(); };
+  $("staff-add").onclick = () => openStaffDialog(null);
+  $("staff-export").onclick = () => {
+    downloadFile(`${slug(state.institute.name)}-staff.csv`, toCsv(
+      ["Name", "Email", "Login role", "Active", "On staff list"],
+      all.map((r) => [r.name, r.email, r.account?.role || "", r.active ? "yes" : "no", r.linked ? "yes" : "no"])));
+  };
+  $("main").querySelectorAll("tbody tr[data-email]").forEach((tr) => {
+    const row = all.find((r) => r.email === tr.dataset.email);
+    tr.querySelector('[data-act="toggle"]').onchange = (e) => toggleStaff(row, e.target.checked, e.target);
+    tr.querySelector('[data-act="edit"]').onclick = () => openStaffDialog(row);
+    tr.querySelector('[data-act="remove"]').onclick = () => removeStaff(row);
+  });
+}
+function renderStaffKeepFocus(id) {
+  const pos = $(id).selectionStart;
+  renderStaff();
+  const input = $(id); input.focus(); input.setSelectionRange(pos, pos);
+}
+
+async function toggleStaff(row, makeActive, input) {
+  input.disabled = true;
+  const senders = (state.institute.allowedSenders || []).map(lower);
+  const next = makeActive ? uniq([...senders, row.email]) : senders.filter((e) => e !== row.email);
+  try {
+    // account-level status (pending) — attempted first so it lights up when shipped
+    if (row.account) {
+      try {
+        await api(`/admins/${row.account._id}/status`, { method: "PATCH", body: { isActive: makeActive }, pendingKey: "staffStatus" });
+        markOk("staffStatus");
+      } catch (err) { describeError(err, "disable the staff login"); }
+    }
+    await patchInstitute({ allowedSenders: next });
+    const inactive = getInactiveStaff();
+    if (makeActive) delete inactive[row.email]; else inactive[row.email] = { name: row.name, at: Date.now() };
+    setInactiveStaff(inactive);
+    toast(`${row.name || row.email} is now ${makeActive ? "active" : "inactive"}.`, "success");
+  } catch (err) {
+    reportError(err, "change who can send messages");
+  }
+  renderStaff();
+}
+
+let staffEditing = null;
+function openStaffDialog(row) {
+  staffEditing = row;
+  const d = $("staff-dialog");
+  $("staff-form").reset();
+  $("staff-error").textContent = "";
+  $("staff-dialog-title").textContent = row ? "Edit staff" : "Add staff";
+  $("staff-dialog-sub").textContent = row ? row.email : "Staff on the sender list can email messages to students.";
+  $("staff-name").value = row?.name || "";
+  $("staff-email").value = row?.email || "";
+  $("staff-active").checked = row ? row.active : true;
+  const hasAccount = !!row?.account;
+  $("staff-account-row").classList.toggle("hidden", hasAccount);
+  $("staff-password-field").classList.toggle("hidden", !hasAccount);
+  $("staff-password-label").textContent = hasAccount ? "New password (optional)" : "Password";
+  d.showModal();
+  $(row ? "staff-name" : "staff-name").focus();
+}
+$("staff-create-account").addEventListener("change", (e) => {
+  if (!staffEditing?.account) $("staff-password-field").classList.toggle("hidden", !e.target.checked);
+});
+
+$("staff-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const err = $("staff-error");
+  err.textContent = "";
+  const name = $("staff-name").value.trim();
+  const email = lower($("staff-email").value);
+  const active = $("staff-active").checked;
+  const createAccount = !staffEditing?.account && $("staff-create-account").checked;
+  const password = $("staff-password").value;
+  const row = staffEditing;
+
+  if (!isEmail(email)) { err.textContent = "Enter a valid email."; return; }
+  if (createAccount && !name) { err.textContent = "Name is required to create a login."; return; }
+  if (createAccount && password.length < 6) { err.textContent = "Password must be at least 6 characters."; return; }
+  if (row?.account && password && password.length < 6) { err.textContent = "Password must be at least 6 characters."; return; }
+  if (!row && staffRows().some((r) => r.email === email)) { err.textContent = "That email is already on your staff list."; return; }
+
+  const btn = $("staff-submit");
+  btn.disabled = true;
+  const notes = [];
+  try {
+    // 1) Sender whitelist (works today)
+    let senders = (state.institute.allowedSenders || []).map(lower);
+    if (row && row.email !== email) senders = senders.filter((s) => s !== row.email);
+    senders = active ? uniq([...senders, email]) : senders.filter((s) => s !== email);
+    await patchInstitute({ allowedSenders: senders });
+
+    const inactive = getInactiveStaff();
+    if (row && row.email !== email) delete inactive[row.email];
+    if (active) delete inactive[email]; else inactive[email] = { name, at: Date.now() };
+    setInactiveStaff(inactive);
+
+    // 2) Login account
+    if (createAccount) {
+      try {
+        await api("/admins/signup", { method: "POST", body: { name, email, password, role: "staff_admin" }, pendingKey: "staffCreate" });
+        markOk("staffCreate");
+        notes.push("login created");
+      } catch (ex) {
+        const d = describeError(ex, "create staff logins");
+        toast(d.msg, d.pending ? "pending" : "error");
+      }
+    } else if (row?.account) {
+      const patch = {};
+      if (name && name !== row.account.name) patch.name = name;
+      if (email !== lower(row.account.email)) patch.email = email;
+      if (password) patch.password = password;
+      if (Object.keys(patch).length) {
+        try {
+          await api(`/admins/update/${row.account._id}`, { method: "PATCH", body: patch });
+          notes.push("login updated");
+        } catch (ex) { reportError(ex, "edit staff logins"); }
+      }
+    }
+    // remember display names for whitelist-only staff (no Admin record to hold them yet)
+    if (name && !row?.account) setStaffNames({ ...getStaffNames(), [email]: name });
+
+    // 3) Institute staff list (pending: DTO drops `staff`)
+    try {
+      const staffList = uniq([...(state.institute.staff || []).map(lower).filter((s) => !row || s !== row.email), email]);
+      await api(`/institutes/${state.institute._id}/staff`, { method: "PUT", body: { staff: staffList }, pendingKey: "staffLink" });
+      markOk("staffLink");
+    } catch (ex) { describeError(ex, "save the staff list"); }
+
+    await loadAdmins();
+    $("staff-dialog").close();
+    toast(`${row ? "Saved" : "Added"} ${name || email}${notes.length ? ` (${notes.join(", ")})` : ""}.`, "success");
+    renderStaff();
+  } catch (ex) {
+    err.textContent = describeError(ex, "update the sender list").msg;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+async function removeStaff(row) {
+  const extra = row.account
+    ? `<label class="check"><input type="checkbox" id="confirm-delete-account" /><span>Also delete their login account<small>Permanently removes ${escapeHtml(row.account.email)} from Dash (super admin only today).</small></span></label>`
+    : "";
+  const ok = await confirmDialog(`Remove ${row.name || row.email}?`, "They'll be taken off the sender list and can no longer message your students.", "Remove", extra);
+  if (!ok) return;
+  const deleteAccount = ok.querySelector?.("#confirm-delete-account")?.checked;
+  try {
+    const senders = (state.institute.allowedSenders || []).map(lower).filter((e) => e !== row.email);
+    await patchInstitute({ allowedSenders: senders });
+    const inactive = getInactiveStaff(); delete inactive[row.email]; setInactiveStaff(inactive);
+    if (row.linked) {
+      try {
+        await api(`/institutes/${state.institute._id}/staff`, { method: "PUT", body: { staff: (state.institute.staff || []).filter((s) => lower(s) !== row.email) }, pendingKey: "staffLink" });
+      } catch (ex) { reportError(ex, "remove them from the staff list"); }
+    }
+    if (deleteAccount) {
+      try { await api(`/admins/delete/${row.account._id}`, { method: "DELETE" }); await loadAdmins(); }
+      catch (ex) { reportError(ex, "delete staff logins"); }
+    }
+    toast(`${row.name || row.email} removed.`, "success");
+  } catch (ex) { reportError(ex, "update the sender list"); }
+  renderStaff();
+}
+
+/* =====================================================================
+   STUDENTS
+   ===================================================================== */
+function renderStudents() {
+  const all = rosterRows();
+  const q = lower(state.ui.studentQuery);
+  const f = state.ui.studentFilter;
+  const match = (r) => {
+    if (q && !(r.email.includes(q) || lower(r.student?.name).includes(q) || lower(r.student?.phone).includes(q))) return false;
+    if (f === "active") return r.active;
+    if (f === "inactive") return !r.active;
+    if (f === "noaccount") return !r.student;
+    if (f === "unverified") return r.student && !r.student.is_account_verified;
+    return true;
+  };
+  const rows = all.filter(match);
+  const sel = state.ui.selected;
+  [...sel].forEach((e) => { if (!all.some((r) => r.email === e)) sel.delete(e); });
+  const filters = [["all", "All"], ["active", "Active"], ["inactive", "Inactive"], ["noaccount", "Not signed up"], ["unverified", "Unverified"]];
+
+  $("main").innerHTML = `
+    <div class="page-head">
+      <div><h1>Students</h1><p>Your roster. Active students receive messages from your staff; inactive students stay on the roster but stop receiving them.</p></div>
+      <div class="page-actions">
+        <button class="btn" id="stu-export">Export CSV</button>
+        <button class="btn btn-primary" id="stu-add">+ Add students</button>
+      </div>
+    </div>
+    ${state.errors.students ? errorNote(`Couldn't load student accounts, so names and sign-up status are missing. ${state.errors.students}`) : ""}
+    ${state.demo ? "" : pendingNote(["scopedStudents"], "Accounts are matched in the browser from the platform-wide student list.")}
+    <div class="panel">
+      <div class="toolbar">
+        <div class="search">${ICON_SEARCH}<input type="text" id="stu-q" placeholder="Search name, email or phone" value="${escapeHtml(state.ui.studentQuery)}" /></div>
+        <div class="segmented" id="stu-filter">${filters.map(([k, l]) => `<button type="button" data-v="${k}" class="${f === k ? "active" : ""}">${l}</button>`).join("")}</div>
+        <span class="toolbar-count">${fmtInt(rows.length)} of ${fmtInt(all.length)}</span>
+      </div>
+      ${sel.size ? `<div class="bulk-bar"><strong>${fmtInt(sel.size)} selected</strong>
+        <button class="btn btn-sm" data-bulk="activate">Activate</button>
+        <button class="btn btn-sm" data-bulk="deactivate">Deactivate</button>
+        <button class="btn btn-sm btn-danger" data-bulk="remove">Remove</button>
+        <button class="btn btn-sm btn-ghost" data-bulk="clear">Clear</button></div>` : ""}
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr>
+            <th style="width:34px;"><input type="checkbox" id="stu-all" aria-label="Select all" ${rows.length && rows.every((r) => sel.has(r.email)) ? "checked" : ""}/></th>
+            <th>Student</th><th>Phone</th><th>Account</th><th>Joined</th><th>Active</th><th class="r">Actions</th>
+          </tr></thead>
+          <tbody>
+            ${rows.length ? rows.map((r) => {
+              const s = r.student;
+              const acct = !s ? `<span class="pill pill-muted">Not signed up</span>`
+                : s.is_account_verified ? `<span class="pill pill-success"><span class="pill-dot"></span>Verified</span>`
+                : `<span class="pill pill-warning"><span class="pill-dot"></span>Unverified</span>`;
+              return `<tr data-email="${escapeHtml(r.email)}">
+                <td><input type="checkbox" data-act="sel" ${sel.has(r.email) ? "checked" : ""} aria-label="Select ${escapeHtml(r.email)}" /></td>
+                <td><div class="person">${avatarHtml(s || { email: r.email }, 32)}<div class="person-text"><strong>${escapeHtml(s?.name || r.email.split("@")[0])}</strong><span>${escapeHtml(r.email)}</span></div></div></td>
+                <td class="mono" style="font-size:12px;">${escapeHtml(s?.phone || "—")}</td>
+                <td>${acct}</td>
+                <td class="soft num" style="font-size:12px;">${s ? fmtDate(unixToMs(s.createdAt)) : "—"}</td>
+                <td><label class="switch"><input type="checkbox" data-act="toggle" ${r.active ? "checked" : ""} aria-label="Active" /><span class="track"></span><span>${r.active ? "Active" : "Inactive"}</span></label></td>
+                <td><div class="row-actions">
+                  ${s ? `<button class="btn btn-sm btn-ghost" data-act="view">View</button>` : `<button class="btn btn-sm btn-ghost" data-act="invite">Invite</button>`}
+                  <button class="btn btn-sm btn-ghost btn-danger" data-act="remove">Remove</button>
+                </div></td>
+              </tr>`;
+            }).join("") : `<tr><td colspan="7"><div class="empty">${all.length ? "No students match your filters." : "No students yet. Add your roster to get started."}</div></td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+
+  $("stu-q").oninput = (e) => { state.ui.studentQuery = e.target.value; const p = e.target.selectionStart; renderStudents(); $("stu-q").focus(); $("stu-q").setSelectionRange(p, p); };
+  $("stu-filter").onclick = (e) => { const b = e.target.closest("button"); if (!b) return; state.ui.studentFilter = b.dataset.v; renderStudents(); };
+  $("stu-add").onclick = () => { $("student-form").reset(); $("student-error").textContent = ""; $("student-dialog").showModal(); $("student-emails").focus(); };
+  $("stu-export").onclick = () => downloadFile(`${slug(state.institute.name)}-students.csv`, toCsv(
+    ["Name", "Email", "Phone", "Signed up", "Verified", "Active", "Joined"],
+    all.map((r) => [r.student?.name || "", r.email, r.student?.phone || "", r.student ? "yes" : "no", r.student?.is_account_verified ? "yes" : "no", r.active ? "yes" : "no", r.student ? isoDay(unixToMs(r.student.createdAt)) : ""])));
+  $("stu-all").onchange = (e) => { rows.forEach((r) => (e.target.checked ? sel.add(r.email) : sel.delete(r.email))); renderStudents(); };
+  $("main").querySelectorAll("[data-bulk]").forEach((b) => (b.onclick = () => bulkStudents(b.dataset.bulk)));
+  $("main").querySelectorAll("tbody tr[data-email]").forEach((tr) => {
+    const row = all.find((r) => r.email === tr.dataset.email);
+    tr.querySelector('[data-act="sel"]').onchange = (e) => { e.target.checked ? sel.add(row.email) : sel.delete(row.email); renderStudents(); };
+    tr.querySelector('[data-act="toggle"]').onchange = (e) => setStudentsActive([row.email], e.target.checked);
+    tr.querySelector('[data-act="remove"]').onclick = () => removeStudents([row.email]);
+    const v = tr.querySelector('[data-act="view"]'); if (v) v.onclick = () => openStudentDetail(row);
+    const i = tr.querySelector('[data-act="invite"]'); if (i) i.onclick = () => inviteStudents([row.email]);
+  });
+}
+
+async function setStudentsActive(emails, active) {
+  const cur = (state.institute.allowedRecipients || []).map(lower);
+  const next = active ? uniq([...cur, ...emails]) : cur.filter((e) => !emails.includes(e));
+  try {
+    await patchInstitute({ allowedRecipients: next });
+    toast(`${plural(emails.length, "student")} ${active ? "activated" : "deactivated"}.`, "success");
+  } catch (err) { reportError(err, "change who receives messages"); }
+  renderStudents();
+}
+
+async function removeStudents(emails) {
+  const label = emails.length === 1 ? emails[0] : plural(emails.length, "student");
+  const ok = await confirmDialog(`Remove ${label}?`, "They'll leave your roster and stop receiving messages. Their Dash account isn't deleted.", "Remove");
+  if (!ok) return;
+  try {
+    await patchInstitute({
+      allStudents: (state.institute.allStudents || []).filter((e) => !emails.includes(lower(e))),
+      allowedRecipients: (state.institute.allowedRecipients || []).filter((e) => !emails.includes(lower(e))),
+    }, `Removed ${label}.`);
+    emails.forEach((e) => state.ui.selected.delete(e));
+  } catch (err) { reportError(err, "edit the roster"); }
+  renderStudents();
+}
+
+async function inviteStudents(emails) {
+  try {
+    await api(`/institutes/${state.institute._id}/students/invite`, { method: "POST", body: { emails }, pendingKey: "studentInvite" });
+    markOk("studentInvite");
+    toast(`Invite sent to ${plural(emails.length, "student")}.`, "success");
+  } catch (err) { reportError(err, "send app invites"); }
+}
+
+function bulkStudents(action) {
+  const emails = [...state.ui.selected];
+  if (action === "clear") { state.ui.selected.clear(); renderStudents(); return; }
+  if (action === "activate") setStudentsActive(emails, true);
+  if (action === "deactivate") setStudentsActive(emails, false);
+  if (action === "remove") removeStudents(emails);
+}
+
+$("student-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const raw = $("student-emails").value;
+  const parts = raw.split(/[\s,;]+/).map(lower).filter(Boolean);
+  const valid = uniq(parts.filter(isEmail));
+  const invalid = parts.length - parts.filter(isEmail).length;
+  const err = $("student-error");
+  if (!valid.length) { err.textContent = "No valid email addresses found."; return; }
+  const existing = new Set(rosterRows().map((r) => r.email));
+  const fresh = valid.filter((v) => !existing.has(v));
+  if (!fresh.length) { err.textContent = "All of those students are already on the roster."; return; }
+  const active = $("student-active").checked;
+  const btn = $("student-submit");
+  btn.disabled = true;
+  try {
+    const body = { allStudents: uniq([...(state.institute.allStudents || []).map(lower), ...fresh]) };
+    if (active) body.allowedRecipients = uniq([...(state.institute.allowedRecipients || []).map(lower), ...fresh]);
+    await patchInstitute(body);
+    $("student-dialog").close();
+    const skipped = valid.length - fresh.length;
+    toast(`Added ${plural(fresh.length, "student")}.${skipped ? ` ${skipped} already on roster.` : ""}${invalid ? ` ${invalid} invalid skipped.` : ""}`, "success");
+    renderStudents();
+  } catch (ex) {
+    err.textContent = describeError(ex, "edit the roster").msg;
+  } finally { btn.disabled = false; }
+});
+
+async function openStudentDetail(row) {
+  const s = row.student;
+  $("detail-title").textContent = s.name || row.email;
+  $("detail-sub").textContent = row.email;
+  $("detail-body").innerHTML = `<div class="center-loading" style="padding:30px 0;"><div class="spinner"></div> Loading activity…</div>`;
+  $("detail-dialog").showModal();
+  let events = state.events?.get(String(s._id));
+  if (!events) {
+    try { const res = await api(`/events/all-by-student/${s._id}`); events = res.data || []; }
+    catch (err) { events = null; reportError(err, "read student events"); }
+  }
+  let msgCount = null;
+  if (state.messages) msgCount = [...state.messages.values()].filter((m) => (m.recipients || []).map(lower).includes(row.email)).length;
+  const st = events ? summarizeEvents(events) : null;
+  const upcoming = events ? events.map((e) => ({ ...e, t: parseWhen(e.start) })).filter((e) => e.t && e.t > Date.now() && e.status !== "cancelled").sort((a, b) => a.t - b.t).slice(0, 5) : [];
+  $("detail-body").innerHTML = `
+    <div style="display:flex; gap:14px; align-items:center;">${avatarHtml(s, 52)}
+      <div><div style="font-weight:650;">${escapeHtml(s.name)}</div>
+      <div class="muted" style="font-size:12px;">${escapeHtml(s.phone || "")} · Joined ${fmtDate(unixToMs(s.createdAt))}</div>
+      <div style="margin-top:4px; display:flex; gap:6px; flex-wrap:wrap;">
+        <span class="pill ${row.active ? "pill-success" : "pill-muted"}"><span class="pill-dot"></span>${row.active ? "Active" : "Inactive"}</span>
+        <span class="pill ${s.is_email_verified ? "pill-success" : "pill-muted"}">Email ${s.is_email_verified ? "verified" : "unverified"}</span>
+        <span class="pill ${s.is_number_verified ? "pill-success" : "pill-muted"}">Phone ${s.is_number_verified ? "verified" : "unverified"}</span>
+      </div></div></div>
+    <div class="kpis">
+      <div class="kpi"><div class="kpi-label">Tasks</div><div class="kpi-value">${st ? fmtInt(st.total) : "—"}</div></div>
+      <div class="kpi"><div class="kpi-label">Completion</div><div class="kpi-value">${st ? fmtPct(st.rate) : "—"}</div><div class="kpi-sub">of due tasks</div></div>
+      <div class="kpi"><div class="kpi-label">Messages</div><div class="kpi-value">${msgCount == null ? "—" : fmtInt(msgCount)}</div><div class="kpi-sub">${msgCount == null ? "Open dashboard to count" : "received"}</div></div>
+    </div>
+    <div><div class="panel-title" style="margin-bottom:6px;">Upcoming</div>
+      <div class="list">${upcoming.length ? upcoming.map((e) => `<div class="list-item"><div class="t">${escapeHtml(e.summary || "Untitled")}</div><div class="s">${fmtDateTime(e.t)}</div></div>`).join("") : `<div class="empty" style="padding:14px;">Nothing upcoming.</div>`}</div>
+    </div>
+    <dl class="meta-table" style="margin-top:0;">
+      <dt>Bedtime</dt><dd>${escapeHtml(s.bedtime || "—")}</dd>
+      <dt>Student ID</dt><dd>${escapeHtml(s._id)}</dd>
+    </dl>`;
+}
+
+/* =====================================================================
+   EVENTS ANALYTICS
+   ===================================================================== */
+const STATUS_ORDER = ["completed", "doing", "upcoming", "overdue", "expired", "postponed", "cancelled"];
+const STATUS_LABEL = { completed: "Completed", doing: "In progress", upcoming: "Upcoming", overdue: "Overdue", expired: "Missed", postponed: "Postponed", cancelled: "Cancelled" };
+
+function academicYearStart(now = new Date()) {
+  const y = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1;   // US academic year starts Aug 1
+  return new Date(y, 7, 1);
+}
+function periodBounds() {
+  const now = new Date();
+  const end = new Date(now); end.setHours(23, 59, 59, 999);
+  const r = state.ui.range;
+  if (r === "30") return { from: new Date(now - 30 * 864e5), to: end, label: "Last 30 days" };
+  if (r === "90") return { from: new Date(now - 90 * 864e5), to: end, label: "Last 90 days" };
+  if (r === "semester") {
+    const fall = now.getMonth() >= 7;
+    const from = fall ? new Date(now.getFullYear(), 7, 1) : new Date(now.getFullYear(), 0, 1);
+    const to = fall ? new Date(now.getFullYear(), 11, 31, 23, 59, 59) : new Date(now.getFullYear(), 6, 31, 23, 59, 59);
+    return { from, to, label: fall ? `Fall ${now.getFullYear()}` : `Spring/Summer ${now.getFullYear()}` };
+  }
+  if (r === "custom" && state.ui.from && state.ui.to) {
+    const from = new Date(`${state.ui.from}T00:00:00`), to = new Date(`${state.ui.to}T23:59:59`);
+    return { from, to, label: `${fmtDate(from)} – ${fmtDate(to)}` };
+  }
+  const from = academicYearStart(now);
+  const to = new Date(from.getFullYear() + 1, 6, 31, 23, 59, 59);
+  return { from, to, label: `Academic year ${from.getFullYear()}–${String(from.getFullYear() + 1).slice(2)}` };
+}
+
+function summarizeEvents(events) {
+  const now = Date.now();
+  const by = {}; STATUS_ORDER.forEach((s) => (by[s] = 0));
+  let due = 0, dueDone = 0, minutes = 0, feedback = 0;
+  events.forEach((e) => {
+    const st = STATUS_ORDER.includes(e.status) ? e.status : "upcoming";
+    by[st]++;
+    const s = parseWhen(e.start), en = parseWhen(e.end) || s;
+    if (en && en <= now && st !== "cancelled" && st !== "postponed") { due++; if (st === "completed") dueDone++; }
+    if (s && en && !e.allDay) { const m = (en - s) / 6e4; if (m > 0 && m <= 24 * 60) minutes += m; }
+    if ((e.feedback || []).some((f) => f && f.answer)) feedback++;
+  });
+  return { total: events.length, by, due, dueDone, rate: due ? dueDone / due : null, hours: minutes / 60, feedback };
+}
+
+async function loadEvents(force) {
+  if (state.eventsProgress) return;
+  if (state.events && !force) return;
+  const students = rosterStudentsWithAccounts();
+  state.eventsProgress = { done: 0, total: students.length };
+  renderEvents();
+
+  try {
+    const { from, to } = periodBounds();
+    await api(`/institutes/${state.institute._id}/analytics/events?from=${isoDay(from)}&to=${isoDay(to)}`, { pendingKey: "analytics" });
+    markOk("analytics");
+  } catch (err) { describeError(err, "aggregate analytics on the server"); }
+
+  const map = new Map();
+  let forbidden = null;
+  await pool(students, FETCH_CONCURRENCY, async (s) => {
+    try { const res = await api(`/events/all-by-student/${s._id}`); map.set(String(s._id), res.data || []); }
+    catch (err) { if (err.status === 403) forbidden = err; map.set(String(s._id), []); }
+  }, (done, total) => {
+    state.eventsProgress = { done, total };
+    const p = $("ev-progress-fill"); if (p) p.style.width = `${(done / Math.max(1, total)) * 100}%`;
+    const l = $("ev-progress-label"); if (l) l.textContent = `Loading events… ${done}/${total} students`;
+  });
+  if (forbidden) reportError(forbidden, "read student events");
+  state.events = map;
+  state.eventsProgress = null;
+  if (currentRoute() === "events") renderEvents();
+}
+
+function computeAnalytics() {
+  const { from, to, label } = periodBounds();
+  const roster = rosterRows();
+  const students = roster.filter((r) => r.student).map((r) => r.student);
+  const pseud = new Map([...students].sort((a, b) => String(a._id).localeCompare(String(b._id))).map((s, i) => [String(s._id), `Student ${String(i + 1).padStart(3, "0")}`]));
+  const perStudent = [];
+  const allEvents = [];
+  students.forEach((s) => {
+    const evs = (state.events.get(String(s._id)) || []).filter((e) => {
+      const t = parseWhen(e.start) || unixToMs(e.createdAt);
+      return t && t >= from.getTime() && t <= to.getTime();
+    });
+    evs.forEach((e) => allEvents.push({ ...e, _student: s }));
+    const sum = summarizeEvents(evs);
+    const last = evs.reduce((m, e) => Math.max(m, unixToMs(e.updatedAt) || 0), 0);
+    perStudent.push({ id: String(s._id), name: s.name, email: s.email, pseudo: pseud.get(String(s._id)), ...sum, last });
+  });
+  const totals = summarizeEvents(allEvents);
+  const served = perStudent.filter((p) => p.total > 0).length;
+
+  // monthly buckets
+  const months = [];
+  const cur = new Date(from.getFullYear(), from.getMonth(), 1);
+  const latestEvent = allEvents.reduce((mx, e) => Math.max(mx, parseWhen(e.start) || 0), Date.now());
+  const lastMonth = new Date(Math.min(to.getTime(), latestEvent));
+  while (cur <= lastMonth && months.length < 24) { months.push(new Date(cur)); cur.setMonth(cur.getMonth() + 1); }
+  const mKey = (d) => `${d.getFullYear()}-${d.getMonth()}`;
+  const mMap = new Map(months.map((d) => [mKey(d), { total: 0, done: 0, students: new Set() }]));
+  const wd = [0, 0, 0, 0, 0, 0, 0];
+  allEvents.forEach((e) => {
+    const t = parseWhen(e.start) || unixToMs(e.createdAt);
+    const d = new Date(t);
+    const b = mMap.get(mKey(d));
+    if (b) { b.total++; if (e.status === "completed") b.done++; b.students.add(String(e._student._id)); }
+    wd[(d.getDay() + 6) % 7]++;
+  });
+  const monthly = months.map((d) => {
+    const b = mMap.get(mKey(d));
+    const lbl = d.toLocaleDateString(undefined, { month: "short" });
+    const full = d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+    return { label: lbl, fullLabel: full, a: b.done, b: b.total - b.done, students: b.students.size, total: b.total,
+      tip: `${full}\n${fmtInt(b.total)} tasks · ${fmtInt(b.done)} completed\n${fmtInt(b.students.size)} students active` };
+  });
+  const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((l, i) => ({ label: l, fullLabel: l, a: wd[i], tip: `${l}\n${plural(wd[i], "task")}` }));
+
+  return {
+    period: { from, to, label },
+    rosterSize: roster.length, withAccounts: students.length, served,
+    engagement: students.length ? served / students.length : null,
+    totals, avgPerStudent: served ? totals.total / served : null,
+    perStudent, monthly, weekdays, allEvents,
+  };
+}
+
+function renderEvents() {
+  const ranges = [["academic", "Academic year"], ["semester", "This term"], ["90", "90 days"], ["30", "30 days"], ["custom", "Custom"]];
+  const head = `
+    <div class="page-head">
+      <div><h1>Events &amp; engagement</h1><p>How your students plan and complete their schoolwork in Dash. Export the report for grant applications, board updates or program evaluation.</p></div>
+      <div class="page-actions">
+        <button class="btn" id="ev-reload">Reload data</button>
+        <button class="btn" id="ev-csv" ${state.events ? "" : "disabled"}>Export CSV</button>
+        <button class="btn" id="ev-json" ${state.events ? "" : "disabled"}>JSON</button>
+        <button class="btn btn-primary" id="ev-print" ${state.events ? "" : "disabled"}>Funding report (PDF)</button>
+      </div>
+    </div>
+    <div class="toolbar">
+      <div class="segmented" id="ev-range">${ranges.map(([k, l]) => `<button type="button" data-v="${k}" class="${state.ui.range === k ? "active" : ""}">${l}</button>`).join("")}</div>
+      <span id="ev-custom" class="${state.ui.range === "custom" ? "" : "hidden"}" style="display:inline-flex; gap:6px; align-items:center;">
+        <input type="date" class="input" id="ev-from" value="${escapeHtml(state.ui.from)}" style="width:auto;" aria-label="From" />
+        <span class="muted">to</span>
+        <input type="date" class="input" id="ev-to" value="${escapeHtml(state.ui.to)}" style="width:auto;" aria-label="To" />
+      </span>
+      <label class="check" style="margin-left:auto; font-size:12.5px;"><input type="checkbox" id="ev-deid" ${state.ui.deidentify ? "checked" : ""}/><span>De-identify students in exports</span></label>
+    </div>`;
+
+  if (!state.events) {
+    const p = state.eventsProgress;
+    $("main").innerHTML = `${head}
+      <div class="panel">
+        ${p ? `<div class="progress"><div class="spinner"></div><span id="ev-progress-label">Loading events… ${p.done}/${p.total} students</span><div class="track"><div class="fill" id="ev-progress-fill" style="width:${(p.done / Math.max(1, p.total)) * 100}%"></div></div></div>`
+            : `<div class="empty">Analytics load each student's calendar events. <br/><br/><button class="btn btn-primary" id="ev-load">Load analytics</button></div>`}
+      </div>`;
+    wireEventsHead();
+    const l = $("ev-load"); if (l) l.onclick = () => loadEvents(true);
+    if (!p && rosterStudentsWithAccounts().length <= 400) loadEvents();
+    return;
+  }
+
+  const a = computeAnalytics();
+  const t = a.totals;
+  const statusItems = STATUS_ORDER.map((s) => ({ label: STATUS_LABEL[s], value: t.by[s], display: `${fmtInt(t.by[s])} · ${fmtPct(t.total ? t.by[s] / t.total : 0)}`, tip: `${STATUS_LABEL[s]}\n${plural(t.by[s], "task")} (${fmtPct(t.total ? t.by[s] / t.total : 0, 1)})` }));
+  const sorted = sortPerStudent(a.perStudent);
+  const th = (key, label, right = true) => `<th class="sortable ${right ? "r" : ""}" data-sort="${key}">${label}${state.ui.sortKey === key ? (state.ui.sortDir < 0 ? " ↓" : " ↑") : ""}</th>`;
+
+  $("main").innerHTML = `${head}
+    <p class="muted" style="font-size:12.5px; margin:-4px 0 14px;">${escapeHtml(a.period.label)} · ${fmtDate(a.period.from)} – ${fmtDate(a.period.to)}</p>
+    <div class="kpis">
+      <div class="kpi"><div class="kpi-label">Students served</div><div class="kpi-value">${fmtInt(a.served)}</div><div class="kpi-sub">${fmtPct(a.engagement)} of ${fmtInt(a.withAccounts)} signed-up students</div></div>
+      <div class="kpi"><div class="kpi-label">Tasks planned</div><div class="kpi-value">${fmtInt(t.total)}</div><div class="kpi-sub">${a.avgPerStudent == null ? "—" : a.avgPerStudent.toFixed(1)} per active student</div></div>
+      <div class="kpi"><div class="kpi-label">Completion rate</div><div class="kpi-value">${fmtPct(t.rate)}</div><div class="kpi-sub">${fmtInt(t.dueDone)} of ${fmtInt(t.due)} due tasks</div></div>
+      <div class="kpi"><div class="kpi-label">Time planned</div><div class="kpi-value">${fmtInt(Math.round(t.hours))}<span class="unit">h</span></div><div class="kpi-sub">Scheduled study &amp; task time</div></div>
+      <div class="kpi"><div class="kpi-label">Reflections</div><div class="kpi-value">${fmtInt(t.feedback)}</div><div class="kpi-sub">Tasks with student feedback</div></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-title-row"><span class="panel-title">Tasks per month</span></div>
+        <p class="panel-desc">Completed tasks against everything else planned that month.</p>
+        ${columnChart(a.monthly, { aName: "Completed", bName: "Other", tableHead: ["Month", "Completed", "Other"] })}
+      </div>
+      <div class="panel">
+        <div class="panel-title-row"><span class="panel-title">Task outcomes</span></div>
+        <p class="panel-desc">Status of every task in the period.</p>
+        ${t.total ? hbarChart(statusItems) : `<div class="empty">No tasks in this period.</div>`}
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-title-row"><span class="panel-title">When students plan work</span></div>
+        <p class="panel-desc">Tasks by day of week.</p>
+        ${columnChart(a.weekdays, { aName: "Tasks", tableHead: ["Day", "Tasks"] })}
+      </div>
+      <div class="panel">
+        <div class="panel-title-row"><span class="panel-title">Completion spread</span></div>
+        <p class="panel-desc">How many students fall in each completion band (students with due tasks).</p>
+        ${hbarChart(completionBands(a.perStudent))}
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <div class="panel-title-row"><span class="panel-title">By student</span><span class="muted" style="font-size:12px;">Click a column to sort</span></div>
+      <p class="panel-desc">Names are shown here for your staff. Exports follow the de-identify setting above.</p>
+      <div class="table-wrap">
+        <table class="data" id="ev-table">
+          <thead><tr>${th("name", "Student", false)}${th("total", "Tasks")}${th("done", "Completed")}${th("rate", "Completion")}${th("missed", "Missed / overdue")}${th("hours", "Hours")}${th("last", "Last activity")}</tr></thead>
+          <tbody>${sorted.map((p) => `<tr>
+            <td><div class="person-text"><strong>${escapeHtml(p.name)}</strong><span>${escapeHtml(p.email)}</span></div></td>
+            <td class="r num">${fmtInt(p.total)}</td>
+            <td class="r num">${fmtInt(p.by.completed)}</td>
+            <td class="r"><div class="inline-meter" style="justify-content:flex-end;"><div class="track"><div class="fill" style="width:${(p.rate || 0) * 100}%"></div></div><span>${fmtPct(p.rate)}</span></div></td>
+            <td class="r num">${fmtInt(p.by.expired + p.by.overdue)}</td>
+            <td class="r num">${p.hours.toFixed(1)}</td>
+            <td class="r num soft" style="font-size:12px;">${p.last ? fmtDate(p.last) : "—"}</td>
+          </tr>`).join("") || `<tr><td colspan="7"><div class="empty">No students with accounts yet.</div></td></tr>`}</tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <div class="panel-title">Using this report for funding</div>
+      <p class="panel-desc">US schools commonly cite engagement and self-management data like this when applying for or reporting on funds. Check the exact metrics with your grant officer; this is supporting evidence, not a compliance filing.</p>
+      <ul class="soft" style="font-size:12.5px; margin:0; padding-left:18px; line-height:1.7;">
+        <li><strong>ESSA Title IV-A (Student Support &amp; Academic Enrichment):</strong> safe and healthy students, well-rounded education, effective use of technology.</li>
+        <li><strong>ESSA Title I-A:</strong> evidence for supplemental supports and schoolwide program evaluation.</li>
+        <li><strong>21st Century Community Learning Centers (Title IV-B):</strong> participation counts and outcome measures.</li>
+        <li><strong>IDEA / Section 504:</strong> progress monitoring for organization and executive-function goals (use individual reports, not aggregates).</li>
+        <li><strong>State SEL, mental-health and foundation grants:</strong> students served, engagement rate and task completion trends.</li>
+      </ul>
+      <p class="muted" style="font-size:12px; margin-top:10px;">FERPA: student-level data is an education record. Exports are de-identified by default; share named data only with school officials who have a legitimate educational interest.</p>
+    </div>
+    ${state.demo ? "" : pendingNote(["analytics"], "Analytics are computed in the browser, one request per student.")}
+  `;
+  wireEventsHead();
+  $("ev-table").querySelectorAll("th[data-sort]").forEach((h) => (h.onclick = () => {
+    const k = h.dataset.sort;
+    if (state.ui.sortKey === k) state.ui.sortDir *= -1; else { state.ui.sortKey = k; state.ui.sortDir = k === "name" ? 1 : -1; }
+    renderEvents();
+  }));
+  $("ev-csv").onclick = () => exportEventsCsv(a);
+  $("ev-json").onclick = () => exportEventsJson(a);
+  $("ev-print").onclick = () => printFundingReport(a);
+}
+
+function wireEventsHead() {
+  $("ev-range").onclick = (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    state.ui.range = b.dataset.v;
+    if (b.dataset.v === "custom" && !state.ui.from) {
+      state.ui.from = isoDay(academicYearStart()); state.ui.to = isoDay(Date.now());
+    }
+    renderEvents();
+  };
+  const f = $("ev-from"), t = $("ev-to");
+  if (f) f.onchange = () => { state.ui.from = f.value; if (state.ui.from && state.ui.to) renderEvents(); };
+  if (t) t.onchange = () => { state.ui.to = t.value; if (state.ui.from && state.ui.to) renderEvents(); };
+  $("ev-deid").onchange = (e) => { state.ui.deidentify = e.target.checked; };
+  $("ev-reload").onclick = () => { state.events = null; loadEvents(true); };
+}
+
+function completionBands(per) {
+  const bands = [["90–100%", 0.9, 1.01], ["70–89%", 0.7, 0.9], ["50–69%", 0.5, 0.7], ["Under 50%", 0, 0.5]];
+  const withDue = per.filter((p) => p.rate != null);
+  return bands.map(([label, lo, hi]) => {
+    const n = withDue.filter((p) => p.rate >= lo && p.rate < hi).length;
+    return { label, value: n, display: fmtInt(n), tip: `${label} completion\n${plural(n, "student")}` };
+  });
+}
+
+function sortPerStudent(rows) {
+  const k = state.ui.sortKey, d = state.ui.sortDir;
+  const val = (p) => ({ name: p.name || "", total: p.total, done: p.by.completed, rate: p.rate ?? -1, missed: p.by.expired + p.by.overdue, hours: p.hours, last: p.last, events: p.total }[k]);
+  return [...rows].sort((a, b) => {
+    const x = val(a), y = val(b);
+    return (typeof x === "string" ? x.localeCompare(y) : x - y) * d;
+  });
+}
+
+function exportEventsCsv(a) {
+  const deid = state.ui.deidentify;
+  const base = `${slug(state.institute.name)}-engagement-${isoDay(a.period.from)}_${isoDay(a.period.to)}`;
+  const t = a.totals;
+  const summary = toCsv(["Metric", "Value"], [
+    ["Institute", state.institute.name], ["Reporting period", `${isoDay(a.period.from)} to ${isoDay(a.period.to)}`],
+    ["Students on roster", a.rosterSize], ["Students with accounts", a.withAccounts], ["Students served (>=1 task)", a.served],
+    ["Engagement rate", fmtPct(a.engagement, 1)], ["Tasks planned", t.total], ["Due tasks", t.due], ["Due tasks completed", t.dueDone],
+    ["Completion rate (due tasks)", fmtPct(t.rate, 1)], ["Hours planned", t.hours.toFixed(1)], ["Tasks with reflections", t.feedback],
+    ...STATUS_ORDER.map((s) => [`Status: ${STATUS_LABEL[s]}`, t.by[s]]),
+  ]);
+  const monthly = toCsv(["Month", "Tasks", "Completed", "Active students"], a.monthly.map((m) => [m.fullLabel, m.total, m.a, m.students]));
+  const students = toCsv(
+    deid ? ["Student", "Tasks", "Completed", "Due", "Completion rate", "Missed/overdue", "Hours planned", "Reflections"]
+         : ["Student", "Email", "Tasks", "Completed", "Due", "Completion rate", "Missed/overdue", "Hours planned", "Reflections"],
+    a.perStudent.map((p) => [deid ? p.pseudo : p.name, ...(deid ? [] : [p.email]), p.total, p.by.completed, p.due, fmtPct(p.rate, 1), p.by.expired + p.by.overdue, p.hours.toFixed(1), p.feedback]));
+  const pseud = new Map(a.perStudent.map((p) => [p.id, p.pseudo]));
+  const raw = toCsv(
+    ["Student", "Start", "End", "Status", "All day", ...(deid ? [] : ["Title"])],
+    a.allEvents.map((e) => [deid ? pseud.get(String(e._student._id)) : e._student.name, e.start, e.end, e.status, e.allDay ? "yes" : "no", ...(deid ? [] : [e.summary || ""])]));
+  // one file, sections separated — opens cleanly in Excel / Sheets
+  const content = ["# Summary", summary, "", "# Monthly", monthly, "", "# By student", students, "", "# Tasks", raw].join("\r\n");
+  downloadFile(`${base}.csv`, "﻿" + content);
+  toast(`Exported ${deid ? "de-identified " : ""}CSV.`, "success");
+}
+
+function exportEventsJson(a) {
+  const deid = state.ui.deidentify;
+  const data = {
+    institute: state.institute.name,
+    generatedAt: new Date().toISOString(),
+    period: { from: isoDay(a.period.from), to: isoDay(a.period.to), label: a.period.label },
+    deidentified: deid,
+    summary: {
+      rosterSize: a.rosterSize, withAccounts: a.withAccounts, studentsServed: a.served, engagementRate: a.engagement,
+      tasks: a.totals.total, dueTasks: a.totals.due, dueCompleted: a.totals.dueDone, completionRate: a.totals.rate,
+      hoursPlanned: +a.totals.hours.toFixed(1), reflections: a.totals.feedback, byStatus: a.totals.by,
+    },
+    monthly: a.monthly.map((m) => ({ month: m.fullLabel, tasks: m.total, completed: m.a, activeStudents: m.students })),
+    students: a.perStudent.map((p) => ({ student: deid ? p.pseudo : p.name, ...(deid ? {} : { email: p.email }), tasks: p.total, completed: p.by.completed, due: p.due, completionRate: p.rate, hours: +p.hours.toFixed(1) })),
+  };
+  downloadFile(`${slug(state.institute.name)}-engagement.json`, JSON.stringify(data, null, 2), "application/json");
+}
+
+function printFundingReport(a) {
+  const deid = state.ui.deidentify;
+  const t = a.totals;
+  const row = (k, v) => `<div>${escapeHtml(k)}</div><div><strong>${escapeHtml(v)}</strong></div>`;
+  $("print-report").innerHTML = `
+    <h1>Student Engagement &amp; Self-Management Report</h1>
+    <p>${escapeHtml(state.institute.name)} · ${escapeHtml(a.period.label)} (${isoDay(a.period.from)} to ${isoDay(a.period.to)})</p>
+    <p class="small">Generated ${escapeHtml(new Date().toLocaleString())} by ${escapeHtml(state.admin?.name || state.admin?.email || "")} · Source: Dash student planner${state.demo ? " · SAMPLE DATA" : ""}</p>
+
+    <h2>1. Summary</h2>
+    <div class="kv">
+      ${row("Students on roster", fmtInt(a.rosterSize))}
+      ${row("Students with Dash accounts", fmtInt(a.withAccounts))}
+      ${row("Students served (unduplicated)", fmtInt(a.served))}
+      ${row("Engagement rate", fmtPct(a.engagement, 1))}
+      ${row("Tasks planned", fmtInt(t.total))}
+      ${row("Average tasks per served student", a.avgPerStudent == null ? "—" : a.avgPerStudent.toFixed(1))}
+      ${row("Completion rate (due tasks)", `${fmtPct(t.rate, 1)} (${fmtInt(t.dueDone)} of ${fmtInt(t.due)})`)}
+      ${row("Scheduled study / task time", `${t.hours.toFixed(1)} hours`)}
+      ${row("Tasks with student reflections", fmtInt(t.feedback))}
+    </div>
+
+    <h2>2. Task outcomes</h2>
+    <table><thead><tr><th>Status</th><th class="r">Tasks</th><th class="r">Share</th></tr></thead><tbody>
+      ${STATUS_ORDER.map((s) => `<tr><td>${STATUS_LABEL[s]}</td><td class="r">${fmtInt(t.by[s])}</td><td class="r">${fmtPct(t.total ? t.by[s] / t.total : 0, 1)}</td></tr>`).join("")}
+    </tbody></table>
+
+    <h2>3. Monthly participation</h2>
+    <table><thead><tr><th>Month</th><th class="r">Active students</th><th class="r">Tasks</th><th class="r">Completed</th></tr></thead><tbody>
+      ${a.monthly.map((m) => `<tr><td>${escapeHtml(m.fullLabel)}</td><td class="r">${fmtInt(m.students)}</td><td class="r">${fmtInt(m.total)}</td><td class="r">${fmtInt(m.a)}</td></tr>`).join("")}
+    </tbody></table>
+
+    <h2>4. Completion distribution</h2>
+    <table><thead><tr><th>Completion band</th><th class="r">Students</th></tr></thead><tbody>
+      ${completionBands(a.perStudent).map((b) => `<tr><td>${b.label}</td><td class="r">${fmtInt(b.value)}</td></tr>`).join("")}
+    </tbody></table>
+
+    <h2>5. Student-level detail${deid ? " (de-identified)" : ""}</h2>
+    <table><thead><tr><th>Student</th><th class="r">Tasks</th><th class="r">Completed</th><th class="r">Due</th><th class="r">Completion</th><th class="r">Hours</th></tr></thead><tbody>
+      ${a.perStudent.sort((x, y) => (deid ? x.pseudo.localeCompare(y.pseudo) : (x.name || "").localeCompare(y.name || ""))).map((p) => `<tr><td>${escapeHtml(deid ? p.pseudo : `${p.name} (${p.email})`)}</td><td class="r">${fmtInt(p.total)}</td><td class="r">${fmtInt(p.by.completed)}</td><td class="r">${fmtInt(p.due)}</td><td class="r">${fmtPct(p.rate, 1)}</td><td class="r">${p.hours.toFixed(1)}</td></tr>`).join("")}
+    </tbody></table>
+
+    <h2>6. Definitions &amp; method</h2>
+    <ul>
+      <li><strong>Task:</strong> a calendar event in a student's Dash planner whose start falls in the reporting period (imported from the student's school calendar or added by the student).</li>
+      <li><strong>Students served:</strong> unduplicated count of students with at least one task in the period.</li>
+      <li><strong>Engagement rate:</strong> students served ÷ students with a Dash account on the roster.</li>
+      <li><strong>Due task:</strong> a task whose end time has passed, excluding cancelled and postponed tasks. <strong>Completion rate</strong> = due tasks marked completed ÷ due tasks.</li>
+      <li><strong>Scheduled time:</strong> sum of task durations, excluding all-day items and items longer than 24 hours.</li>
+      <li><strong>Reflections:</strong> tasks where the student answered at least one feedback prompt.</li>
+    </ul>
+    <p class="small">Privacy: ${deid ? "student identities are replaced with stable pseudonyms; the key is kept by the institute." : "this report contains personally identifiable student information and is an education record under FERPA."} Funding uses commonly supported by these measures include ESSA Title IV-A, Title I-A, 21st CCLC (Title IV-B), and state SEL / mental-health grants. Confirm required indicators with the funding agency.</p>
+  `;
+  window.print();
+}
+
+/* =====================================================================
+   PROFILE
+   ===================================================================== */
+function renderProfile() {
+  const a = state.admin || {};
+  $("main").innerHTML = `
+    <div class="page-head"><div><h1>My profile</h1><p>Your account details for the institute admin console.</p></div></div>
+    ${a.role === "institute_admin" && !state.demo ? pendingNote(["adminMe"], "Saving changes to your own profile isn't allowed for institute admins yet.") : ""}
+    <div class="profile-grid">
+      <div class="panel profile-card">
+        ${avatarHtml(a, 96)}
+        <h2>${escapeHtml(a.name || "—")}</h2>
+        <div class="muted" style="font-size:12.5px;">${escapeHtml(a.email || "")}</div>
+        <div style="margin-top:8px;"><span class="pill pill-accent">${escapeHtml(roleLabel(a.role))}</span></div>
+        <dl class="meta-table">
+          <dt>Institute</dt><dd>${escapeHtml(state.institute?.name || "—")}</dd>
+          <dt>Admin ID</dt><dd>${escapeHtml(a._id || "—")}</dd>
+          <dt>Created</dt><dd>${fmtDate(unixToMs(a.createdAt))}</dd>
+          <dt>Updated</dt><dd>${fmtDate(unixToMs(a.updatedAt))}</dd>
+        </dl>
+      </div>
+      <div>
+        <form class="panel" id="profile-form" novalidate>
+          <div class="panel-title">Details</div>
+          <p class="panel-desc">Changing your email changes how you sign in.</p>
+          <div class="field-grid">
+            <div class="field"><label for="pf-name">Full name</label><input type="text" id="pf-name" value="${escapeHtml(a.name || "")}" /></div>
+            <div class="field"><label for="pf-email">Email</label><input type="email" id="pf-email" value="${escapeHtml(a.email || "")}" /></div>
+          </div>
+          <div class="field" style="margin-top:14px;">
+            <label for="pf-image">Photo</label>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <input type="url" id="pf-image" class="input" style="flex:1; min-width:200px;" placeholder="https://…" value="${escapeHtml(a.image && !/default\/default\.png$/i.test(a.image) ? a.image : "")}" />
+              <label class="btn" for="pf-file" style="cursor:pointer;">Upload…</label>
+              <input type="file" id="pf-file" accept="image/*" class="hidden" />
+            </div>
+            <span class="field-hint" id="pf-image-hint">Paste an image URL or upload a file.</span>
+          </div>
+          <div class="form-error" id="pf-error" style="margin-top:10px;"></div>
+          <div style="display:flex; gap:8px;"><button type="submit" class="btn btn-primary" id="pf-save">Save changes</button></div>
+        </form>
+        <form class="panel" id="pw-form" novalidate>
+          <div class="panel-title">Password</div>
+          <p class="panel-desc">Use at least 6 characters.</p>
+          <div class="field-grid">
+            <div class="field"><label for="pw-new">New password</label><input type="password" id="pw-new" autocomplete="new-password" /></div>
+            <div class="field"><label for="pw-confirm">Confirm password</label><input type="password" id="pw-confirm" autocomplete="new-password" /></div>
+          </div>
+          <div class="form-error" id="pw-error" style="margin-top:10px;"></div>
+          <button type="submit" class="btn btn-primary" id="pw-save">Update password</button>
+        </form>
+      </div>
+    </div>`;
+
+  $("pf-file").onchange = async (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const hint = $("pf-image-hint");
+    hint.textContent = "Uploading…";
+    try {
+      const fd = new FormData(); fd.append("files", file);
+      const res = await api("/upload", { method: "POST", form: fd });
+      const url = Array.isArray(res.data) ? res.data[0] : res.data?.url || res.data;
+      $("pf-image").value = url || "";
+      hint.textContent = "Uploaded. Save to apply.";
+    } catch (err) { hint.textContent = "Upload failed."; reportError(err, "upload images"); }
+  };
+  $("profile-form").onsubmit = async (e) => {
+    e.preventDefault();
+    const name = $("pf-name").value.trim(), email = lower($("pf-email").value), image = $("pf-image").value.trim();
+    const err = $("pf-error"); err.textContent = "";
+    if (!name) { err.textContent = "Name is required."; return; }
+    if (!isEmail(email)) { err.textContent = "Enter a valid email."; return; }
+    const body = { name, email }; if (image) body.image = image;
+    await saveProfile(body, $("pf-save"), err, "Profile saved.");
+  };
+  $("pw-form").onsubmit = async (e) => {
+    e.preventDefault();
+    const p1 = $("pw-new").value, p2 = $("pw-confirm").value, err = $("pw-error");
+    err.textContent = "";
+    if (p1.length < 6) { err.textContent = "Password must be at least 6 characters."; return; }
+    if (p1 !== p2) { err.textContent = "Passwords don't match."; return; }
+    const ok = await saveProfile({ password: p1 }, $("pw-save"), err, "Password updated.");
+    if (ok) $("pw-form").reset();
+  };
+}
+
+async function saveProfile(body, btn, errEl, okMsg) {
+  btn.disabled = true;
+  try {
+    let res;
+    try {
+      res = await api("/admins/me", { method: "PATCH", body, pendingKey: "adminMe" });
+      markOk("adminMe");
+    } catch (err) {
+      if (err.status !== 404 && err.status !== 405) throw err;
+      describeError(err, "update your profile");
+      res = await api(`/admins/update/${state.admin._id}`, { method: "PATCH", body });
+    }
+    const { password, ...rest } = body; void password;
+    state.admin = { ...state.admin, ...(res?.data && typeof res.data === "object" ? res.data : rest) };
+    saveSession();
+    toast(okMsg, "success");
+    renderTopbar();
+    if (!body.password) renderProfile();
+    return true;
+  } catch (err) {
+    const d = describeError(err, "update your own profile");
+    errEl.textContent = d.msg;
+    if (d.pending) toast(d.msg, "pending");
+    return false;
+  } finally { btn.disabled = false; }
+}
+
+/* =====================================================================
+   BACKEND STATUS
+   ===================================================================== */
+function renderBackend() {
+  const statusPill = (key) => {
+    const o = state.observed[key];
+    if (!o) return `<span class="pill pill-pending">Pending</span>`;
+    if (o.status === "ok") return `<span class="pill pill-success"><span class="pill-dot"></span>Available</span>`;
+    if (o.status === "forbidden") return `<span class="pill pill-danger"><span class="pill-dot"></span>403 for your role</span>`;
+    return `<span class="pill pill-pending">Not found (404)</span>`;
+  };
+  $("main").innerHTML = `
+    <div class="page-head"><div><h1>Backend status</h1><p>Features this console has UI for but the server doesn't fully support yet. Pending endpoints are still called, so each one starts working as soon as the backend ships it with this contract.</p></div></div>
+    <div class="note note-info">${ICON_INFO}<div>Signed in as <strong>${escapeHtml(state.admin?.email || "")}</strong> (${escapeHtml(roleLabel(state.admin?.role))})${state.demo ? " · sample data, no server calls" : ` against <span class="mono">${escapeHtml(BASE_URL)}</span>`}. Status reflects requests made in this session.</div></div>
+    <div class="panel">
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr><th>Feature</th><th>Needs</th><th>Status</th></tr></thead>
+          <tbody>${Object.entries(PENDING).map(([k, p]) => `
+            <tr><td style="min-width:200px;"><strong>${escapeHtml(p.title)}</strong><div class="muted" style="font-size:12px; margin-top:2px;">${escapeHtml(p.detail)}</div></td>
+            <td class="mono" style="font-size:11.5px; min-width:200px;">${escapeHtml(p.endpoint)}</td>
+            <td>${statusPill(k)}</td></tr>`).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">Works today (with a super_admin or staff_admin token)</div>
+      <ul class="soft" style="font-size:12.5px; margin:8px 0 0; padding-left:18px; line-height:1.7;">
+        <li>Sign in via <span class="mono">POST /admins/signin</span> (any admin role, including institute_admin).</li>
+        <li>Institute details, roster and whitelists via <span class="mono">/institutes/find</span> and <span class="mono">/institutes/update</span>.</li>
+        <li>Staff active/inactive via <span class="mono">allowedSenders</span>; student active/inactive via <span class="mono">allowedRecipients</span>. These match how the email webhook filters senders and recipients.</li>
+        <li>Message counts via <span class="mono">/email2messages/all-by-student/:id</span>; analytics via <span class="mono">/events/all-by-student/:id</span>.</li>
+        <li>Staff login create/edit/delete via <span class="mono">/admins/signup|update|delete</span> (super_admin only).</li>
+      </ul>
+    </div>`;
+}
+
+/* ---------------------------------------------------------------------
+   Confirm dialog helper (resolves to the dialog element, or false)
+   --------------------------------------------------------------------- */
+function confirmDialog(title, text, okLabel = "Confirm", extraHtml = "") {
+  return new Promise((resolve) => {
+    const d = $("confirm-dialog");
+    $("confirm-title").textContent = title;
+    $("confirm-text").textContent = text;
+    $("confirm-extra").innerHTML = extraHtml;
+    $("confirm-extra").classList.toggle("hidden", !extraHtml);
+    $("confirm-ok").textContent = okLabel;
+    let result = false;
+    $("confirm-form").onsubmit = (e) => { e.preventDefault(); result = d; d.close(); };
+    d.onclose = () => resolve(result);
+    d.showModal();
+  });
+}
+document.querySelectorAll("dialog [data-close]").forEach((b) => b.addEventListener("click", () => b.closest("dialog").close()));
+
+/* =====================================================================
+   SAMPLE DATA (demo mode) — implements the *existing* endpoints only.
+   Pending endpoints return 404 here too, so the pending notices are real.
+   ===================================================================== */
+const DEMO = { ready: false };
+function buildDemo() {
+  let seed = 20261106;
+  const rnd = () => ((seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296);
+  const pick = (arr) => arr[Math.floor(rnd() * arr.length)];
+  const now = Date.now(), nowS = Math.floor(now / 1000);
+  const oid = () => Array.from({ length: 24 }, () => "0123456789abcdef"[Math.floor(rnd() * 16)]).join("");
+  const domain = "northfield.example.edu";
+
+  const first = ["Avery", "Jordan", "Maya", "Liam", "Sofia", "Noah", "Zara", "Ethan", "Priya", "Lucas", "Amara", "Owen", "Chloe", "Mateo", "Ivy", "Elijah", "Nora", "Kai", "Leah", "Diego", "Hana", "Caleb", "Ruby", "Isaac", "Aaliyah", "Jonah", "Mila", "Theo", "Esme", "Malik", "Grace", "Rowan"];
+  const last = ["Nguyen", "Patel", "Garcia", "Kim", "Johnson", "Okafor", "Silva", "Cohen", "Brown", "Haddad", "Lopez", "Park", "Rivera", "Ali", "Moore", "Chen"];
+
+  const admin = { _id: oid(), name: "Jordan Ellis", email: `jordan.ellis@${domain}`, image: "", role: "institute_admin", createdAt: nowS - 200 * 86400, updatedAt: nowS - 3 * 86400 };
+  const staffNames = ["Dana Whitfield", "Marcus Reyes", "Helen Osei", "Sam Ito", "Priyanka Rao", "Tom Becker"];
+  const admins = [admin, ...staffNames.map((n, i) => ({ _id: oid(), name: n, email: `${n.toLowerCase().replace(" ", ".")}@${domain}`, image: "", role: "staff_admin", createdAt: nowS - (180 - i * 10) * 86400, updatedAt: nowS }))];
+  admins.push({ _id: oid(), name: "Platform Owner", email: "owner@dash.example.com", image: "", role: "super_admin", createdAt: nowS - 400 * 86400, updatedAt: nowS });
+
+  const students = [];
+  for (let i = 0; i < 32; i++) {
+    const name = `${first[i]} ${pick(last)}`;
+    const email = `${name.toLowerCase().replace(/[^a-z]+/g, ".")}${i}@students.${domain}`;
+    const verified = rnd() > 0.15;
+    students.push({ _id: oid(), name, email, phone: `+1555${String(1000000 + Math.floor(rnd() * 8999999)).slice(0, 7)}`, image: "", calendarLink: "https://calendar.example/ics", bedtime: pick(["22:00", "22:30", "23:00", "23:30"]), emojis: { emoji: "🙂" }, is_email_verified: verified, is_number_verified: verified || rnd() > 0.5, is_account_verified: verified, createdAt: nowS - Math.floor(30 + rnd() * 150) * 86400, updatedAt: nowS });
+  }
+  const rosterAccounts = students.slice(0, 29);
+  const pendingEmails = [`new.student1@students.${domain}`, `new.student2@students.${domain}`, `transfer.kid@students.${domain}`];
+  const institute = {
+    _id: oid(), name: "Northfield Academy",
+    staff: [admin.email, ...admins.slice(1, 6).map((a) => a.email)],
+    allStudents: [...rosterAccounts.map((s) => s.email), ...pendingEmails],
+    allowedSenders: [admin.email, ...admins.slice(1, 5).map((a) => a.email), `counselor.office@${domain}`],
+    allowedRecipients: [...rosterAccounts.slice(0, 26).map((s) => s.email), pendingEmails[0]],
+    reportTime: "24hrs", isActive: true, createdAt: nowS - 220 * 86400, updatedAt: nowS - 86400,
+  };
+  const other = { _id: oid(), name: "Lakeside Prep", staff: [], allStudents: students.slice(29).map((s) => s.email), allowedSenders: [], allowedRecipients: [], reportTime: "12hrs", isActive: false, createdAt: nowS - 90 * 86400, updatedAt: nowS };
+
+  const titles = ["Algebra problem set", "Biology lab report", "Read ch. 7 – History", "Spanish vocab quiz prep", "English essay draft", "Chemistry worksheet", "Study group", "Physics homework", "Art portfolio piece", "SAT practice section", "Book report outline", "Geometry quiz review", "Computer science project", "Counselor check-in", "College application essay"];
+  const events = [];
+  const start = academicYearStart(new Date(now)).getTime() + 14 * 864e5;
+  const horizon = now + 45 * 864e5;
+  rosterAccounts.concat(students.slice(29)).forEach((s, si) => {
+    const engagement = si % 9 === 8 ? 0.15 : 0.4 + rnd() * 0.6;
+    const n = Math.floor(20 + rnd() * 70 * engagement);
+    const skill = 0.45 + rnd() * 0.5;
+    for (let k = 0; k < n; k++) {
+      const t = start + rnd() * (horizon - start);
+      const d = new Date(t); d.setHours(15 + Math.floor(rnd() * 6), rnd() > 0.5 ? 30 : 0, 0, 0);
+      if (d.getDay() === 6 && rnd() > 0.4) d.setDate(d.getDate() + 2);
+      const dur = pick([30, 45, 60, 60, 90, 120]);
+      const st = d.getTime(), en = st + dur * 6e4;
+      let status;
+      if (en > now) status = rnd() > 0.93 ? "postponed" : "upcoming";
+      else { const r = rnd(); status = r < skill ? "completed" : r < skill + 0.12 ? "expired" : r < skill + 0.2 ? "overdue" : r < skill + 0.26 ? "postponed" : r < skill + 0.3 ? "cancelled" : "completed"; }
+      if (en > now && st < now) status = "doing";
+      events.push({ _id: oid(), studentId: s._id, summary: pick(titles), start: new Date(st).toISOString(), end: new Date(en).toISOString(), allDay: false, status,
+        feedback: status === "completed" && rnd() > 0.7 ? [{ question: "How did it go?", answer: pick(["Good", "Hard but done", "Easy"]) }] : [],
+        createdAt: Math.floor(st / 1000) - 7 * 86400, updatedAt: Math.floor(Math.min(en, now) / 1000) });
+    }
+  });
+
+  const subjects = ["Reminder: field trip forms due Friday", "Midterm study schedule", "Library hours extended", "Tutoring sign-ups open", "Weekly check-in", "Club fair this Thursday", "Progress reports posted", "Wellness week activities", "Schedule change for Monday", "College info night"];
+  const messages = [];
+  const senderPool = institute.allowedSenders;
+  for (let i = 0; i < 74; i++) {
+    const ts = nowS - Math.floor(rnd() * 84 * 86400);
+    const count = 3 + Math.floor(rnd() * 14);
+    const rec = uniq(Array.from({ length: count }, () => pick(institute.allowedRecipients)));
+    messages.push({ _id: oid(), senderEmail: pick(senderPool.slice(0, 5).concat(senderPool[1], senderPool[2])), recipients: rec, subject: pick(subjects), timestamp: ts, createdAt: ts });
+  }
+
+  Object.assign(DEMO, { ready: true, admin, admins, students, institutes: [institute, other], events, messages });
+}
+
+async function mockApi(path, method, body, pendingKey) {
+  await new Promise((r) => setTimeout(r, 40 + Math.random() * 90));
+  const ok = (data, meta) => ({ success: true, data, meta });
+  const notFound = () => { throw new ApiError("Route not found", 404, pendingKey); };
+  const [p] = path.split("?");
+  let m;
+  if (p === "/admins/signin") return ok({ token: "demo", admin: DEMO.admin });
+  if (p === "/institutes/all") return ok(DEMO.institutes, { currentPage: 1, totalPages: 1 });
+  if ((m = p.match(/^\/institutes\/find\/(\w+)$/))) return ok(DEMO.institutes.find((i) => i._id === m[1]));
+  if ((m = p.match(/^\/institutes\/update\/(\w+)$/)) && method === "PATCH") {
+    const inst = DEMO.institutes.find((i) => i._id === m[1]);
+    ["name", "allowedSenders", "allowedRecipients", "allStudents"].forEach((k) => { if (body[k] !== undefined) inst[k] = body[k]; }); // mirrors the real DTO: `staff` is dropped
+    inst.updatedAt = Math.floor(Date.now() / 1000);
+    return ok(inst);
+  }
+  if (p === "/students/all") return ok(DEMO.students);
+  if (p === "/admins/all") return ok(DEMO.admins);
+  if (p === "/admins/signup" && method === "POST") {
+    const a = { _id: String(Date.now()), name: body.name, email: body.email, role: body.role, image: "", createdAt: Math.floor(Date.now() / 1000), updatedAt: Math.floor(Date.now() / 1000) };
+    DEMO.admins.push(a); return ok(a);
+  }
+  if ((m = p.match(/^\/admins\/update\/(\w+)$/))) {
+    const a = DEMO.admins.find((x) => x._id === m[1]); if (!a) notFound();
+    const { password, ...rest } = body; void password; Object.assign(a, rest);
+    if (a._id === DEMO.admin._id) Object.assign(DEMO.admin, rest);
+    return ok(a);
+  }
+  if ((m = p.match(/^\/admins\/delete\/(\w+)$/))) { DEMO.admins = DEMO.admins.filter((x) => x._id !== m[1]); return ok(null); }
+  if ((m = p.match(/^\/events\/all-by-student\/(\w+)$/))) return ok(DEMO.events.filter((e) => e.studentId === m[1]));
+  if ((m = p.match(/^\/email2messages\/all-by-student\/(\w+)$/))) {
+    const s = DEMO.students.find((x) => x._id === m[1]);
+    return ok(DEMO.messages.filter((msg) => msg.recipients.includes(s?.email)).sort((a, b) => b.timestamp - a.timestamp));
+  }
+  if (p === "/upload") throw new ApiError("Uploads are disabled in sample mode", 400);
+  return notFound();
+}
+
+/* ---------------------------------------------------------------------
+   Boot
+   --------------------------------------------------------------------- */
+loadSession();
+if (state.token || state.demo) enterApp(); else showLogin();
+</script>
+</body>
+</html>
