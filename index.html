@@ -435,7 +435,61 @@
   .toast.info .dot { background: var(--accent); }
   .toast.pending { border-color: color-mix(in srgb, var(--pending) 40%, var(--border)); }
   .toast.pending .dot { background: var(--pending); }
+  .toast .msg { flex: 1; }
+  .toast-action {
+    margin: -3px -4px -3px 6px; padding: 3px 9px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+    background: var(--panel-alt); color: var(--accent); font: inherit; font-weight: 650; cursor: pointer; white-space: nowrap;
+  }
+  .toast-action:hover { background: var(--accent-soft); border-color: var(--accent-soft-border); }
   @media (prefers-reduced-motion: reduce) { .spinner, .toast { animation: none; } }
+
+  /* ---------- Feedback: progress bar, busy buttons, pending rows ---------- */
+  .top-progress { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 500; overflow: hidden; pointer-events: none; opacity: 0; transition: opacity 0.2s ease 0.1s; }
+  .top-progress.on { opacity: 1; transition-delay: 0s; }
+  .top-progress::before { content: ""; position: absolute; top: 0; bottom: 0; left: -40%; width: 40%; background: var(--accent); border-radius: 2px; animation: progress-slide 1.1s ease-in-out infinite; }
+  @keyframes progress-slide { from { left: -40%; } to { left: 100%; } }
+  .btn.is-busy { cursor: progress; justify-content: center; }
+  .btn .btn-spinner { width: 13px; height: 13px; border-color: color-mix(in srgb, currentColor 30%, transparent); border-top-color: currentColor; }
+  tr.pending td, .pick-row.pending { opacity: 0.55; pointer-events: none; transition: opacity 0.15s ease; }
+  tr.pending .switch .track { background-image: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent); background-size: 200% 100%; animation: sk-shimmer 0.9s linear infinite; }
+
+  /* ---------- Skeletons ---------- */
+  .sk { background: linear-gradient(90deg, var(--bg-inset) 25%, var(--panel-alt) 45%, var(--bg-inset) 65%); background-size: 300% 100%; animation: sk-shimmer 1.3s ease-in-out infinite; border-radius: 6px; max-width: 100%; }
+  .sk-circle { width: 32px; height: 32px; border-radius: 999px; flex-shrink: 0; }
+  .sk-row { display: flex; align-items: center; gap: 12px; padding: 12px 4px; border-bottom: 1px solid var(--border-soft); }
+  .sk-row:last-child { border-bottom: none; }
+  .sk-stack { display: grid; gap: 8px; }
+  @keyframes sk-shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+
+  /* ---------- Rich empty states ---------- */
+  .empty-rich { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 36px 16px; text-align: center; }
+  .empty-rich .empty-icon { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); margin-bottom: 4px; }
+  .empty-rich strong { font-size: 14px; font-weight: 650; }
+  .empty-rich p { color: var(--text-soft); font-size: 12.5px; max-width: 46ch; margin: 0; }
+  .empty-rich .page-actions { margin-top: 6px; justify-content: center; }
+
+  /* ---------- Search shortcut hint ---------- */
+  .search input { padding-right: 30px; }
+  .search::after {
+    content: "/"; position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    font: 600 11px/1 var(--font-mono, monospace); color: var(--text-faint); border: 1px solid var(--border);
+    border-radius: 4px; padding: 2px 5px; background: var(--panel); pointer-events: none;
+  }
+  .search:focus-within::after { opacity: 0; }
+
+  /* ---------- Motion (only when the user hasn't asked for less) ---------- */
+  @media (prefers-reduced-motion: no-preference) {
+    .main.enter { animation: page-in 0.2s ease-out; }
+    .flash td, .pick-row.flash { animation: row-flash 1.2s ease-out; }
+    .kpi-value { transition: color 0.2s ease; }
+  }
+  @keyframes page-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  @keyframes row-flash { from { background: var(--accent-soft); } to { background: transparent; } }
+  @media (prefers-reduced-motion: reduce) {
+    .top-progress, tr.pending td, .pick-row.pending, .kpi-value { transition: none; }
+    .top-progress::before { animation: none; left: 0; width: 100%; opacity: 0.6; }
+    .sk, tr.pending .switch .track { animation: none; }
+  }
 
   /* ---------- Print report ---------- */
   #print-report { display: none; }
@@ -620,6 +674,7 @@
   <div class="dialog-body" id="detail-body"></div>
 </dialog>
 
+<div class="top-progress" id="top-progress" role="progressbar" aria-label="Loading" aria-hidden="true"></div>
 <div class="toast-region" id="toast-region" aria-live="polite"></div>
 <div class="viz-tip hidden" id="viz-tip"></div>
 <div id="print-report"></div>
@@ -730,7 +785,8 @@ const state = {
     studentQuery: "", studentFilter: "all", selected: new Set(),
     range: "academic", from: "", to: "", deidentify: true,
     sortKey: "total", sortDir: -1,
-    configDraft: null,      // { instId, senders:Set, recipients:Set } staged whitelist edits
+    pending: new Set(),     // "stu:<email>" / "staff:<email>" rows with a save in flight
+    configDraft: null,      // { instId, senders:{add,remove}, recipients:{add,remove} } staged whitelist edits
     configQuery: { senders: "", recipients: "" },
   },
 };
@@ -778,12 +834,18 @@ function parseWhen(value) {
   return Number.isNaN(t) ? null : t;
 }
 
-function toast(message, type = "info", ms = 4600) {
+function toast(message, type = "info", ms = 4600, { action } = {}) {
   const node = document.createElement("div");
   node.className = `toast ${type}`;
-  node.innerHTML = `<span class="dot"></span><span>${escapeHtml(message)}</span>`;
+  node.innerHTML = `<span class="dot"></span><span class="msg">${escapeHtml(message)}</span>`;
+  if (action) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "toast-action"; b.textContent = action.label;
+    b.onclick = () => { node.remove(); action.onClick(); };
+    node.appendChild(b);
+  }
   $("toast-region").appendChild(node);
-  setTimeout(() => node.remove(), type === "pending" ? 7000 : ms);
+  setTimeout(() => node.remove(), type === "pending" ? 7000 : action ? Math.max(ms, 6500) : ms);
 }
 
 function avatarHtml(person, size = 32) {
@@ -841,7 +903,51 @@ class ApiError extends Error {
   constructor(message, status, pendingKey) { super(message); this.status = status; this.pendingKey = pendingKey; }
 }
 
-async function api(path, { method = "GET", body, form, pendingKey } = {}) {
+/* ---- In-flight tracking: drives the thin progress bar under the top bar ---- */
+let inflight = 0;
+function trackInflight(delta) {
+  inflight = Math.max(0, inflight + delta);
+  const bar = $("top-progress");
+  if (bar) { bar.classList.toggle("on", inflight > 0); bar.setAttribute("aria-hidden", inflight > 0 ? "false" : "true"); }
+}
+async function api(...args) {
+  trackInflight(1);
+  try { return await apiRequest(...args); } finally { trackInflight(-1); }
+}
+
+/** Disable a button and show a spinner while `fn` runs; ignores re-clicks while busy. */
+async function withBusy(btn, fn) {
+  if (!btn) return fn();
+  if (btn.dataset.busy) return undefined;
+  btn.dataset.busy = "1";
+  const html = btn.innerHTML, width = btn.style.width;
+  btn.style.width = `${btn.offsetWidth}px`;
+  btn.disabled = true; btn.classList.add("is-busy"); btn.setAttribute("aria-busy", "true");
+  btn.innerHTML = `<span class="spinner btn-spinner" aria-hidden="true"></span>`;
+  try { return await fn(); } finally {
+    delete btn.dataset.busy;
+    if (btn.isConnected) {
+      btn.innerHTML = html; btn.style.width = width; btn.disabled = false;
+      btn.classList.remove("is-busy"); btn.removeAttribute("aria-busy");
+    }
+  }
+}
+
+/** Briefly highlight rows (Students/Staff tables or Config pick rows) for the given emails. */
+function flashRows(emails) {
+  emails.forEach((e) => {
+    const sel = `[data-email="${CSS.escape(lower(e))}"]`;
+    $("main").querySelectorAll(`tr${sel}, .pick-row input${sel}`).forEach((el) => {
+      const row = el.closest("tr, .pick-row");
+      row.classList.remove("flash"); void row.offsetWidth; row.classList.add("flash");
+    });
+  });
+}
+
+function setPending(keys, on) { keys.forEach((k) => (on ? state.ui.pending.add(k) : state.ui.pending.delete(k))); }
+const pendingClass = (key) => (state.ui.pending.has(key) ? "pending" : "");
+
+async function apiRequest(path, { method = "GET", body, form, pendingKey } = {}) {
   if (state.demo) return mockApi(path, method, body, pendingKey);
   const headers = {};
   if (!form) headers["Content-Type"] = "application/json";
@@ -904,6 +1010,7 @@ function resetData() {
   Object.assign(state, { institutes: [], institute: null, blocked: null, students: null, admins: null, errors: {}, messages: null, messagesProgress: null, events: null, eventsProgress: null });
   state.ui.selected = new Set();
   state.ui.configDraft = null;
+  state.ui.pending = new Set();
 }
 function signOut() {
   state.token = null; state.admin = null; state.demo = false;
@@ -990,8 +1097,9 @@ async function enterApp() {
   $("demo-flag").classList.toggle("hidden", !state.demo);
   renderTopbar();
   if (!location.hash || location.hash === "#/" || location.hash === "#") location.hash = "#/dashboard";
-  $("main").innerHTML = `<div class="center-loading"><div class="spinner"></div> Loading your institute…</div>`;
-  await loadCore();
+  state.loadingCore = true;
+  $("main").innerHTML = skeletonHtml();
+  try { await loadCore(); } finally { state.loadingCore = false; }
   render();
 }
 
@@ -1156,7 +1264,7 @@ function renderTopbar() {
       `<option value="${escapeHtml(i._id)}" ${i._id === state.institute?._id ? "selected" : ""}>${escapeHtml(i.name)}</option>`).join("");
   }
   $("nav-count-staff").textContent = state.institute ? staffRows().filter((r) => r.active).length || "" : "";
-  $("nav-count-students").textContent = state.institute ? rosterRows().length || "" : "";
+  $("nav-count-students").textContent = state.institute ? rosterRows().filter((r) => r.onRoster).length || "" : "";
 }
 
 $("inst-switch").addEventListener("change", async (e) => {
@@ -1164,9 +1272,12 @@ $("inst-switch").addEventListener("change", async (e) => {
   const target = state.institutes.find((i) => i._id === e.target.value);
   resetDataKeepList();
   state.institute = target;
-  $("main").innerHTML = `<div class="center-loading"><div class="spinner"></div> Switching institute…</div>`;
-  try { await refreshInstitute(); } catch { /* use list copy */ }
-  await Promise.all([loadStudents(), loadAdmins()]);
+  state.loadingCore = true;
+  $("main").innerHTML = skeletonHtml();
+  try {
+    try { await refreshInstitute(); } catch { /* use list copy */ }
+    await Promise.all([loadStudents(), loadAdmins()]);
+  } finally { state.loadingCore = false; }
   renderTopbar(); render();
 });
 function resetDataKeepList() {
@@ -1186,8 +1297,11 @@ function render() {
   document.querySelectorAll(".nav-link").forEach((n) => n.classList.toggle("active", n.dataset.route === route));
   renderTopbar();
   const needsInstitute = !["profile", "backend"].includes(route);
+  if (needsInstitute && state.loadingCore) { $("main").innerHTML = skeletonHtml(route); return; }
   if (needsInstitute && !state.institute) { renderBlocked(); return; }
   ROUTES[route]();
+  const main = $("main");
+  main.classList.remove("enter"); void main.offsetWidth; main.classList.add("enter");
   window.scrollTo({ top: 0 });
 }
 let lastHash = location.hash;
@@ -1222,6 +1336,55 @@ function errorNote(msg) {
   return `<div class="note note-warn">${ICON_WARN}<div>${escapeHtml(msg)}</div></div>`;
 }
 
+const EMPTY_ICONS = {
+  users: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/></svg>`,
+  cap: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>`,
+  inbox: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"/></svg>`,
+  search: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>`,
+};
+/** Empty state with an icon, a line of guidance and optional action buttons. */
+function emptyState({ icon = "users", title, text = "", actions = "" }) {
+  return `<div class="empty-rich"><div class="empty-icon">${EMPTY_ICONS[icon]}</div><strong>${escapeHtml(title)}</strong>${text ? `<p>${escapeHtml(text)}</p>` : ""}${actions ? `<div class="page-actions">${actions}</div>` : ""}</div>`;
+}
+// Empty-state buttons are rendered as markup, so handle them with one delegated listener.
+$("main").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-empty]");
+  if (!b) return;
+  const act = b.dataset.empty;
+  if (act === "add-staff") openStaffDialog(null);
+  if (act === "add-students") $("stu-add")?.click();
+  if (act === "clear-staff") { state.ui.staffQuery = ""; state.ui.staffFilter = "all"; renderStaff(); }
+  if (act === "clear-students") { state.ui.studentQuery = ""; state.ui.studentFilter = "all"; renderStudents(); }
+  if (act === "clear-senders" || act === "clear-recipients") { state.ui.configQuery[act.slice(6)] = ""; renderConfig(); }
+});
+// "/" jumps to the current page's search box (unless typing or a dialog is open).
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.target.closest?.("input, textarea, select, [contenteditable='true']") || document.querySelector("dialog[open]")) return;
+  const input = $("main").querySelector(".search input");
+  if (!input) return;
+  e.preventDefault(); input.focus(); input.select();
+});
+
+/** Page-shaped placeholder shown while a route's data loads (keeps layout stable). */
+function skeletonHtml(route = currentRoute()) {
+  const bar = (w, h = 12) => `<div class="sk" style="width:${w};height:${h}px"></div>`;
+  const rows = (n) => Array.from({ length: n }, (_, i) => `<div class="sk-row"><div class="sk sk-circle"></div>
+    <div class="sk-stack" style="flex:1">${bar(`${38 + ((i * 17) % 30)}%`)}${bar(`${50 + ((i * 11) % 25)}%`, 10)}</div>${bar("64px", 20)}</div>`).join("");
+  const head = `<div class="page-head"><div class="sk-stack" style="flex:1">${bar("200px", 24)}${bar("min(520px, 90%)")}</div></div>`;
+  const panel = (inner) => `<div class="panel">${inner}</div>`;
+  let body;
+  if (route === "dashboard" || route === "events") {
+    body = `<div class="kpis">${Array.from({ length: 4 }, () => `<div class="kpi sk-stack">${bar("45%", 10)}${bar("38%", 26)}${bar("70%", 10)}</div>`).join("")}</div>
+      <div class="grid-2">${panel(`<div class="sk-stack">${bar("40%", 14)}${bar("100%", 150)}</div>`)}${panel(`<div class="sk-stack">${bar("40%", 14)}${rows(4)}</div>`)}</div>`;
+  } else if (route === "config") {
+    body = `<div class="grid-2">${panel(`<div class="sk-stack">${bar("40%", 14)}${bar("80%", 10)}</div>${rows(5)}`)}${panel(`<div class="sk-stack">${bar("40%", 14)}${bar("80%", 10)}</div>${rows(5)}`)}</div>`;
+  } else {
+    body = panel(`<div class="toolbar">${bar("min(300px, 100%)", 32)}${bar("min(260px, 60%)", 32)}</div>${rows(6)}`);
+  }
+  return `<div aria-busy="true" aria-label="Loading">${head}${body}</div>`;
+}
+
 function renderBlocked() {
   const reasons = {
     forbidden: {
@@ -1252,7 +1415,11 @@ function renderBlocked() {
       </div>
     </div>`;
   $("blocked-demo").onclick = () => { $("demo-btn").click(); };
-  $("blocked-retry").onclick = async () => { $("main").innerHTML = `<div class="center-loading"><div class="spinner"></div> Retrying…</div>`; await loadCore(); render(); };
+  $("blocked-retry").onclick = async () => {
+    state.loadingCore = true; $("main").innerHTML = skeletonHtml();
+    try { await loadCore(); } finally { state.loadingCore = false; }
+    render();
+  };
 }
 
 /* ---------------------------------------------------------------------
@@ -1329,7 +1496,8 @@ function hbarChart(items) {
    ===================================================================== */
 function renderDashboard() {
   const inst = state.institute;
-  const roster = rosterRows();
+  const roster = rosterRows().filter((r) => r.onRoster);
+  const offRoster = rosterRows().length - roster.length;
   const staff = staffRows();
   const withAccount = roster.filter((r) => r.student);
   const verified = withAccount.filter((r) => r.student.is_account_verified).length;
@@ -1337,7 +1505,9 @@ function renderDashboard() {
   const activeStaff = staff.filter((s) => s.active).length;
 
   const m = messageStats();
-  const msgValue = state.messages ? fmtInt(m.total) : state.messagesProgress ? `<span class="spinner" style="display:inline-block;width:20px;height:20px"></span>` : "—";
+  const msgValue = state.messages ? fmtInt(m.total) : state.messagesProgress ? `<span class="sk" style="display:inline-block;width:72px;height:26px;vertical-align:middle"></span>` : "—";
+  const skChart = `<div class="sk" style="height:150px;margin-top:6px"></div>`;
+  const skList = (n) => `<div class="sk-stack">${Array.from({ length: n }, (_, i) => `<div class="sk-row"><div class="sk-stack" style="flex:1"><div class="sk" style="width:${55 + ((i * 13) % 30)}%;height:12px"></div><div class="sk" style="width:${35 + ((i * 7) % 20)}%;height:10px"></div></div></div>`).join("")}</div>`;
   const msgSub = state.messages
     ? `${fmtInt(m.last30)} in the last 30 days · ${fmtInt(m.deliveries)} deliveries`
     : state.messagesProgress ? `Counting… ${state.messagesProgress.done}/${state.messagesProgress.total} students` : "Not counted yet";
@@ -1364,7 +1534,7 @@ function renderDashboard() {
       <div class="kpi">
         <div class="kpi-label">Students</div>
         <div class="kpi-value">${fmtInt(roster.length)}</div>
-        <div class="kpi-sub">${fmtInt(activeStudents)} active · ${fmtInt(withAccount.length)} signed up</div>
+        <div class="kpi-sub">${fmtInt(activeStudents)} active · ${fmtInt(withAccount.length)} signed up${offRoster ? ` · <a href="#/students" data-offroster style="color:var(--warning);">+${fmtInt(offRoster)} not on roster</a>` : ""}</div>
       </div>
       <div class="kpi">
         <div class="kpi-label">Staff</div>
@@ -1387,7 +1557,7 @@ function renderDashboard() {
       <div class="panel">
         <div class="panel-title-row"><span class="panel-title">Messages per week</span><span class="muted" style="font-size:12px;">Last 12 weeks</span></div>
         <p class="panel-desc">Unique staff emails delivered to your students through Dash.</p>
-        <div id="dash-msg-chart">${state.messages ? columnChart(m.weekly, { aName: "Messages", tableHead: ["Week of", "Messages"] }) : `<div class="empty">${state.messagesProgress ? "Counting messages…" : "—"}</div>`}</div>
+        <div id="dash-msg-chart">${state.messages ? columnChart(m.weekly, { aName: "Messages", tableHead: ["Week of", "Messages"] }) : (state.messagesProgress ? skChart : `<div class="empty">—</div>`)}</div>
       </div>
       <div class="panel">
         <div class="panel-title-row"><span class="panel-title">Recent messages</span></div>
@@ -1410,18 +1580,21 @@ function renderDashboard() {
       <div class="panel">
         <div class="panel-title-row"><span class="panel-title">Top senders</span><a href="#/staff" class="btn btn-sm btn-ghost">Open staff</a></div>
         <p class="panel-desc">Staff who sent the most messages.</p>
-        <div id="dash-senders">${state.messages ? (m.senders.length ? hbarChart(m.senders.slice(0, 6)) : `<div class="empty">No messages yet.</div>`) : `<div class="empty">—</div>`}</div>
+        <div id="dash-senders">${state.messages ? (m.senders.length ? hbarChart(m.senders.slice(0, 6)) : emptyState({ icon: "inbox", title: "No senders yet", text: "Staff who send messages will be ranked here." })) : state.messagesProgress ? skList(4) : `<div class="empty">—</div>`}</div>
       </div>
     </div>
     ${state.demo ? "" : pendingNote(["stats"], "Message totals are counted in the browser, one request per student.")}
   `;
-  $("dash-refresh").onclick = async () => {
-    state.messages = null;
-    $("main").innerHTML = `<div class="center-loading"><div class="spinner"></div> Refreshing…</div>`;
+  const offLink = $("main").querySelector("[data-offroster]");
+  if (offLink) offLink.onclick = () => { state.ui.studentFilter = "offroster"; };
+  // Refresh in place: keep what's on screen, show progress, update values when data lands.
+  $("dash-refresh").onclick = (e) => withBusy(e.currentTarget, async () => {
     try { await refreshInstitute(); } catch (err) { reportError(err, "refresh the institute"); }
     await Promise.all([loadStudents(), loadAdmins()]);
-    render();
-  };
+    renderTopbar();
+    if (currentRoute() === "dashboard") renderDashboard();
+    if (!state.messagesProgress) loadMessages();
+  });
   if (!state.messages && !state.messagesProgress) loadMessages();
 }
 
@@ -1497,8 +1670,10 @@ function messageStats() {
 }
 
 function recentMessagesHtml(list) {
-  if (!state.messages) return `<div class="empty">${state.messagesProgress ? "Loading…" : "—"}</div>`;
-  if (!list.length) return `<div class="empty">No messages sent yet.</div>`;
+  if (!state.messages) return state.messagesProgress
+    ? `<div class="sk-stack">${Array.from({ length: 4 }, () => `<div class="sk-row"><div class="sk-stack" style="flex:1"><div class="sk" style="width:65%;height:12px"></div><div class="sk" style="width:40%;height:10px"></div></div><div class="sk" style="width:70px;height:10px"></div></div>`).join("")}</div>`
+    : `<div class="empty">—</div>`;
+  if (!list.length) return emptyState({ icon: "inbox", title: "No messages yet", text: "Messages show up here when whitelisted staff email your students through Dash.", actions: `<a class="btn btn-sm" href="#/config">Check the whitelist</a>` });
   const roster = new Set(rosterRows().map((r) => r.email));
   return list.map((m) => {
     const reach = (m.recipients || []).filter((r) => roster.has(lower(r))).length;
@@ -1543,7 +1718,7 @@ function renderStaff() {
           <thead><tr><th>Staff member</th><th>Login</th><th>Added via</th><th>Active</th><th class="r">Actions</th></tr></thead>
           <tbody>
             ${rows.length ? rows.map((r) => `
-              <tr data-email="${escapeHtml(r.email)}">
+              <tr data-email="${escapeHtml(r.email)}" class="${pendingClass(`staff:${r.email}`)}">
                 <td><div class="person">${avatarHtml({ name: r.name, email: r.email, image: r.account?.image }, 32)}
                   <div class="person-text"><strong>${escapeHtml(r.name || r.email.split("@")[0])}</strong><span>${escapeHtml(r.email)}</span></div></div></td>
                 <td>${r.account ? `<span class="pill pill-accent">${escapeHtml(roleLabel(r.account.role))}</span>` : `<span class="pill pill-muted">No login</span>`}</td>
@@ -1553,7 +1728,9 @@ function renderStaff() {
                   <button class="btn btn-sm btn-ghost" data-act="edit">Edit</button>
                   <button class="btn btn-sm btn-ghost btn-danger" data-act="remove">Remove</button>
                 </div></td>
-              </tr>`).join("") : `<tr><td colspan="5"><div class="empty">${all.length ? "No staff match your filters." : "No staff yet. Add the first one."}</div></td></tr>`}
+              </tr>`).join("") : `<tr><td colspan="5">${all.length
+                ? emptyState({ icon: "search", title: "No staff match your filters", actions: `<button class="btn btn-sm" data-empty="clear-staff">Clear filters</button>` })
+                : emptyState({ title: "No staff yet", text: "Staff on the sender list can email messages to your students.", actions: `<button class="btn btn-sm btn-primary" data-empty="add-staff">+ Add staff</button>` })}</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -1569,9 +1746,9 @@ function renderStaff() {
   };
   $("main").querySelectorAll("tbody tr[data-email]").forEach((tr) => {
     const row = all.find((r) => r.email === tr.dataset.email);
-    tr.querySelector('[data-act="toggle"]').onchange = (e) => toggleStaff(row, e.target.checked, e.target);
+    tr.querySelector('[data-act="toggle"]').onchange = (e) => toggleStaff(row, e.target.checked);
     tr.querySelector('[data-act="edit"]').onclick = () => openStaffDialog(row);
-    tr.querySelector('[data-act="remove"]').onclick = () => removeStaff(row);
+    tr.querySelector('[data-act="remove"]').onclick = (e) => removeStaff(row, e.currentTarget);
   });
 }
 function renderStaffKeepFocus(id) {
@@ -1580,8 +1757,9 @@ function renderStaffKeepFocus(id) {
   const input = $(id); input.focus(); input.setSelectionRange(pos, pos);
 }
 
-async function toggleStaff(row, makeActive, input) {
-  input.disabled = true;
+async function toggleStaff(row, makeActive) {
+  setPending([`staff:${row.email}`], true);
+  markRowsOptimistic([row.email], makeActive);
   const senders = (state.institute.allowedSenders || []).map(lower);
   const next = makeActive ? uniq([...senders, row.email]) : senders.filter((e) => e !== row.email);
   try {
@@ -1598,8 +1776,10 @@ async function toggleStaff(row, makeActive, input) {
     setInactiveStaff(inactive);
     toast(`${row.name || row.email} is now ${makeActive ? "active" : "inactive"}.`, "success");
   } catch (err) {
-    reportError(err, "change who can send messages");
+    reportError(err, "change who can send messages"); // re-render below restores the real state
   }
+  setPending([`staff:${row.email}`], false);
+  renderTopbar();
   renderStaff();
 }
 
@@ -1692,7 +1872,9 @@ $("staff-form").addEventListener("submit", async (e) => {
     await loadAdmins();
     $("staff-dialog").close();
     toast(`${row ? "Saved" : "Added"} ${name || email}${notes.length ? ` (${notes.join(", ")})` : ""}.`, "success");
+    renderTopbar();
     renderStaff();
+    flashRows([email]);
   } catch (ex) {
     err.textContent = describeError(ex, "update the sender list").msg;
   } finally {
@@ -1700,14 +1882,18 @@ $("staff-form").addEventListener("submit", async (e) => {
   }
 });
 
-async function removeStaff(row) {
+async function removeStaff(row, btn) {
   const extra = row.account
     ? `<label class="check"><input type="checkbox" id="confirm-delete-account" /><span>Also delete their login account<small>Permanently removes ${escapeHtml(row.account.email)} from Dash (super admin only today).</small></span></label>`
     : "";
   const ok = await confirmDialog(`Remove ${row.name || row.email}?`, "They'll be taken off the sender list and can no longer message your students.", "Remove", extra);
   if (!ok) return;
   const deleteAccount = ok.querySelector?.("#confirm-delete-account")?.checked;
-  try {
+  const wasSender = (state.institute.allowedSenders || []).map(lower).includes(row.email);
+  const prevInactive = getInactiveStaff()[row.email];
+  setPending([`staff:${row.email}`], true);
+  markRowsOptimistic([row.email]);
+  await withBusy(btn, async () => { try {
     const senders = (state.institute.allowedSenders || []).map(lower).filter((e) => e !== row.email);
     await patchInstitute({ allowedSenders: senders });
     const inactive = getInactiveStaff(); delete inactive[row.email]; setInactiveStaff(inactive);
@@ -1720,9 +1906,23 @@ async function removeStaff(row) {
       try { await api(`/admins/delete/${row.account._id}`, { method: "DELETE" }); await loadAdmins(); }
       catch (ex) { reportError(ex, "delete staff logins"); }
     }
-    toast(`${row.name || row.email} removed.`, "success");
-  } catch (ex) { reportError(ex, "update the sender list"); }
+    // A deleted login can't be brought back, so only offer Undo when the account was kept.
+    toast(`${row.name || row.email} removed.`, "success", 4600,
+      deleteAccount ? {} : { action: { label: "Undo", onClick: () => undoRemoveStaff(row, wasSender, prevInactive) } });
+  } catch (ex) { reportError(ex, "update the sender list"); } });
+  setPending([`staff:${row.email}`], false);
+  renderTopbar();
   renderStaff();
+}
+
+async function undoRemoveStaff(row, wasSender, prevInactive) {
+  try {
+    if (wasSender) await patchInstitute({ allowedSenders: uniq([...(state.institute.allowedSenders || []).map(lower), row.email]) });
+    if (prevInactive) setInactiveStaff({ ...getInactiveStaff(), [row.email]: prevInactive });
+    toast(`${row.name || row.email} restored.`, "success");
+  } catch (err) { reportError(err, "restore the staff member"); }
+  renderTopbar();
+  if (currentRoute() === "staff") { renderStaff(); flashRows([row.email]); }
 }
 
 /* =====================================================================
@@ -1738,12 +1938,15 @@ function renderStudents() {
     if (f === "inactive") return !r.active;
     if (f === "noaccount") return !r.student;
     if (f === "unverified") return r.student && !r.student.is_account_verified;
+    if (f === "offroster") return !r.onRoster;
     return true;
   };
   const rows = all.filter(match);
+  const offRoster = all.filter((r) => !r.onRoster).length;
   const sel = state.ui.selected;
   [...sel].forEach((e) => { if (!all.some((r) => r.email === e)) sel.delete(e); });
   const filters = [["all", "All"], ["active", "Active"], ["inactive", "Inactive"], ["noaccount", "Not signed up"], ["unverified", "Unverified"]];
+  if (offRoster || f === "offroster") filters.push(["offroster", `Not on roster (${offRoster})`]);
 
   $("main").innerHTML = `
     <div class="page-head">
@@ -1764,6 +1967,7 @@ function renderStudents() {
       ${sel.size ? `<div class="bulk-bar"><strong>${fmtInt(sel.size)} selected</strong>
         <button class="btn btn-sm" data-bulk="activate">Activate</button>
         <button class="btn btn-sm" data-bulk="deactivate">Deactivate</button>
+        ${[...sel].some((e) => all.find((r) => r.email === e && !r.onRoster)) ? `<button class="btn btn-sm" data-bulk="roster">Add to roster</button>` : ""}
         <button class="btn btn-sm btn-danger" data-bulk="remove">Remove</button>
         <button class="btn btn-sm btn-ghost" data-bulk="clear">Clear</button></div>` : ""}
       <div class="table-wrap">
@@ -1778,19 +1982,22 @@ function renderStudents() {
               const acct = !s ? `<span class="pill pill-muted">Not signed up</span>`
                 : s.is_account_verified ? `<span class="pill pill-success"><span class="pill-dot"></span>Verified</span>`
                 : `<span class="pill pill-warning"><span class="pill-dot"></span>Unverified</span>`;
-              return `<tr data-email="${escapeHtml(r.email)}">
+              return `<tr data-email="${escapeHtml(r.email)}" class="${pendingClass(`stu:${r.email}`)}">
                 <td><input type="checkbox" data-act="sel" ${sel.has(r.email) ? "checked" : ""} aria-label="Select ${escapeHtml(r.email)}" /></td>
-                <td><div class="person">${avatarHtml(s || { email: r.email }, 32)}<div class="person-text"><strong>${escapeHtml(s?.name || r.email.split("@")[0])}</strong><span>${escapeHtml(r.email)}</span></div></div></td>
+                <td><div class="person">${avatarHtml(s || { email: r.email }, 32)}<div class="person-text"><strong>${escapeHtml(s?.name || r.email.split("@")[0])}${r.onRoster ? "" : ` <span class="pill pill-warning" title="Receives messages (on the recipient whitelist) but isn't on the institute roster">Not on roster</span>`}</strong><span>${escapeHtml(r.email)}</span></div></div></td>
                 <td class="mono" style="font-size:12px;">${escapeHtml(s?.phone || "—")}</td>
                 <td>${acct}</td>
                 <td class="soft num" style="font-size:12px;">${s ? fmtDate(unixToMs(s.createdAt)) : "—"}</td>
                 <td><label class="switch"><input type="checkbox" data-act="toggle" ${r.active ? "checked" : ""} aria-label="Active" /><span class="track"></span><span>${r.active ? "Active" : "Inactive"}</span></label></td>
                 <td><div class="row-actions">
+                  ${r.onRoster ? "" : `<button class="btn btn-sm" data-act="roster">Add to roster</button>`}
                   ${s ? `<button class="btn btn-sm btn-ghost" data-act="view">View</button>` : `<button class="btn btn-sm btn-ghost" data-act="invite">Invite</button>`}
                   <button class="btn btn-sm btn-ghost btn-danger" data-act="remove">Remove</button>
                 </div></td>
               </tr>`;
-            }).join("") : `<tr><td colspan="7"><div class="empty">${all.length ? "No students match your filters." : "No students yet. Add your roster to get started."}</div></td></tr>`}
+            }).join("") : `<tr><td colspan="7">${all.length
+              ? emptyState({ icon: "search", title: "No students match your filters", actions: `<button class="btn btn-sm" data-empty="clear-students">Clear filters</button>` })
+              : emptyState({ icon: "cap", title: "No students yet", text: "Add your roster to start routing staff emails to students.", actions: `<button class="btn btn-sm btn-primary" data-empty="add-students">+ Add students</button>` })}</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -1803,39 +2010,93 @@ function renderStudents() {
     ["Name", "Email", "Phone", "Signed up", "Verified", "Active", "Joined"],
     all.map((r) => [r.student?.name || "", r.email, r.student?.phone || "", r.student ? "yes" : "no", r.student?.is_account_verified ? "yes" : "no", r.active ? "yes" : "no", r.student ? isoDay(unixToMs(r.student.createdAt)) : ""])));
   $("stu-all").onchange = (e) => { rows.forEach((r) => (e.target.checked ? sel.add(r.email) : sel.delete(r.email))); renderStudents(); };
-  $("main").querySelectorAll("[data-bulk]").forEach((b) => (b.onclick = () => bulkStudents(b.dataset.bulk)));
+  $("main").querySelectorAll("[data-bulk]").forEach((b) => (b.onclick = (e) => bulkStudents(b.dataset.bulk, e.currentTarget)));
   $("main").querySelectorAll("tbody tr[data-email]").forEach((tr) => {
     const row = all.find((r) => r.email === tr.dataset.email);
     tr.querySelector('[data-act="sel"]').onchange = (e) => { e.target.checked ? sel.add(row.email) : sel.delete(row.email); renderStudents(); };
     tr.querySelector('[data-act="toggle"]').onchange = (e) => setStudentsActive([row.email], e.target.checked);
-    tr.querySelector('[data-act="remove"]').onclick = () => removeStudents([row.email]);
+    tr.querySelector('[data-act="remove"]').onclick = (e) => removeStudents([row.email], e.currentTarget);
     const v = tr.querySelector('[data-act="view"]'); if (v) v.onclick = () => openStudentDetail(row);
-    const i = tr.querySelector('[data-act="invite"]'); if (i) i.onclick = () => inviteStudents([row.email]);
+    const i = tr.querySelector('[data-act="invite"]'); if (i) i.onclick = (e) => withBusy(e.currentTarget, () => inviteStudents([row.email]));
+    const ro = tr.querySelector('[data-act="roster"]'); if (ro) ro.onclick = (e) => withBusy(e.currentTarget, () => addToRoster([row.email]));
+  });
+}
+
+/** Show the intended state on the rows right away and dim them until the save settles. */
+function markRowsOptimistic(emails, active) {
+  emails.forEach((e) => {
+    const tr = $("main").querySelector(`tr[data-email="${CSS.escape(e)}"]`);
+    if (!tr) return;
+    tr.classList.add("pending");
+    const t = tr.querySelector('[data-act="toggle"]');
+    if (t && active !== undefined) { t.checked = active; t.closest(".switch").lastElementChild.textContent = active ? "Active" : "Inactive"; }
   });
 }
 
 async function setStudentsActive(emails, active) {
+  const keys = emails.map((e) => `stu:${e}`);
+  setPending(keys, true);
+  markRowsOptimistic(emails, active);
   const cur = (state.institute.allowedRecipients || []).map(lower);
   const next = active ? uniq([...cur, ...emails]) : cur.filter((e) => !emails.includes(e));
   try {
     await patchInstitute({ allowedRecipients: next });
     toast(`${plural(emails.length, "student")} ${active ? "activated" : "deactivated"}.`, "success");
-  } catch (err) { reportError(err, "change who receives messages"); }
+  } catch (err) { reportError(err, "change who receives messages"); } // re-render restores the real state
+  setPending(keys, false);
+  renderTopbar();
   renderStudents();
 }
 
-async function removeStudents(emails) {
+/** Put whitelisted-but-unrostered recipients onto allStudents (whitelist untouched). */
+async function addToRoster(emails, after = renderStudents) {
+  try {
+    await patchInstitute({ allStudents: uniq([...(state.institute.allStudents || []).map(lower), ...emails.map(lower)]) },
+      `Added ${emails.length === 1 ? emails[0] : plural(emails.length, "student")} to the roster.`);
+  } catch (err) { reportError(err, "edit the roster"); }
+  renderTopbar();
+  after();
+  flashRows(emails);
+}
+
+async function removeStudents(emails, btn) {
   const label = emails.length === 1 ? emails[0] : plural(emails.length, "student");
   const ok = await confirmDialog(`Remove ${label}?`, "They'll leave your roster and stop receiving messages. Their Dash account isn't deleted.", "Remove");
   if (!ok) return;
+  const inst = state.institute;
+  // Remember exactly which list each email was on, so Undo re-adds only those (no snapshot overwrite).
+  const wasStudent = emails.filter((e) => (inst.allStudents || []).map(lower).includes(e));
+  const wasRecipient = emails.filter((e) => (inst.allowedRecipients || []).map(lower).includes(e));
+  const keys = emails.map((e) => `stu:${e}`);
+  setPending(keys, true);
+  markRowsOptimistic(emails);
+  await withBusy(btn, async () => {
+    try {
+      await patchInstitute({
+        allStudents: (inst.allStudents || []).filter((e) => !emails.includes(lower(e))),
+        allowedRecipients: (inst.allowedRecipients || []).filter((e) => !emails.includes(lower(e))),
+      });
+      emails.forEach((e) => state.ui.selected.delete(e));
+      toast(`Removed ${label}.`, "success", 4600, { action: { label: "Undo", onClick: () => undoRemoveStudents(wasStudent, wasRecipient) } });
+    } catch (err) { reportError(err, "edit the roster"); }
+  });
+  setPending(keys, false);
+  renderTopbar();
+  renderStudents();
+}
+
+async function undoRemoveStudents(students, recipients) {
+  const all = uniq([...students, ...recipients]);
   try {
     await patchInstitute({
-      allStudents: (state.institute.allStudents || []).filter((e) => !emails.includes(lower(e))),
-      allowedRecipients: (state.institute.allowedRecipients || []).filter((e) => !emails.includes(lower(e))),
-    }, `Removed ${label}.`);
-    emails.forEach((e) => state.ui.selected.delete(e));
-  } catch (err) { reportError(err, "edit the roster"); }
-  renderStudents();
+      allStudents: uniq([...(state.institute.allStudents || []).map(lower), ...students]),
+      allowedRecipients: uniq([...(state.institute.allowedRecipients || []).map(lower), ...recipients]),
+    });
+    toast(`Restored ${all.length === 1 ? all[0] : plural(all.length, "student")}.`, "success");
+  } catch (err) { reportError(err, "restore the students"); }
+  renderTopbar();
+  if (currentRoute() === "students") { renderStudents(); flashRows(all); }
+  else if (currentRoute() === "dashboard") renderDashboard();
 }
 
 async function inviteStudents(emails) {
@@ -1846,12 +2107,13 @@ async function inviteStudents(emails) {
   } catch (err) { reportError(err, "send app invites"); }
 }
 
-function bulkStudents(action) {
+function bulkStudents(action, btn) {
   const emails = [...state.ui.selected];
   if (action === "clear") { state.ui.selected.clear(); renderStudents(); return; }
-  if (action === "activate") setStudentsActive(emails, true);
-  if (action === "deactivate") setStudentsActive(emails, false);
-  if (action === "remove") removeStudents(emails);
+  if (action === "activate") withBusy(btn, () => setStudentsActive(emails, true));
+  if (action === "deactivate") withBusy(btn, () => setStudentsActive(emails, false));
+  if (action === "remove") removeStudents(emails, btn);
+  if (action === "roster") withBusy(btn, () => addToRoster(emails.filter((e) => !(state.institute.allStudents || []).map(lower).includes(e))));
 }
 
 $("student-form").addEventListener("submit", async (e) => {
@@ -1862,7 +2124,7 @@ $("student-form").addEventListener("submit", async (e) => {
   const invalid = parts.length - parts.filter(isEmail).length;
   const err = $("student-error");
   if (!valid.length) { err.textContent = "No valid email addresses found."; return; }
-  const existing = new Set(rosterRows().map((r) => r.email));
+  const existing = new Set((state.institute.allStudents || []).map(lower));
   const fresh = valid.filter((v) => !existing.has(v));
   if (!fresh.length) { err.textContent = "All of those students are already on the roster."; return; }
   const active = $("student-active").checked;
@@ -1875,7 +2137,9 @@ $("student-form").addEventListener("submit", async (e) => {
     $("student-dialog").close();
     const skipped = valid.length - fresh.length;
     toast(`Added ${plural(fresh.length, "student")}.${skipped ? ` ${skipped} already on roster.` : ""}${invalid ? ` ${invalid} invalid skipped.` : ""}`, "success");
+    renderTopbar();
     renderStudents();
+    flashRows(fresh);
   } catch (ex) {
     err.textContent = describeError(ex, "edit the roster").msg;
   } finally { btn.disabled = false; }
@@ -2054,7 +2318,7 @@ function renderEvents() {
     <div class="page-head">
       <div><h1>Events &amp; engagement</h1><p>How your students plan and complete their schoolwork in Dash. Export the report for grant applications, board updates or program evaluation.</p></div>
       <div class="page-actions">
-        <button class="btn" id="ev-reload">Reload data</button>
+        <button class="btn" id="ev-reload" ${state.eventsProgress ? "disabled" : ""}>${state.eventsProgress ? `<span class="spinner btn-spinner"></span> Loading…` : "Reload data"}</button>
         <button class="btn" id="ev-csv" ${state.events ? "" : "disabled"}>Export CSV</button>
         <button class="btn" id="ev-json" ${state.events ? "" : "disabled"}>JSON</button>
         <button class="btn btn-primary" id="ev-print" ${state.events ? "" : "disabled"}>Funding report (PDF)</button>
@@ -2466,20 +2730,32 @@ function savedWhitelist() {
     recipients: new Set((inst?.allowedRecipients || []).map(lower)),
   };
 }
+// The draft stores only the admin's own adds/removes, so changes saved elsewhere
+// (Staff/Students toggles, refreshes) never show up as phantom "unsaved changes".
 function configDraft() {
   const d = state.ui.configDraft;
   if (d && d.instId === state.institute?._id) return d;
-  const saved = savedWhitelist();
-  state.ui.configDraft = { instId: state.institute?._id, senders: saved.senders, recipients: saved.recipients };
+  const blank = () => ({ add: new Set(), remove: new Set() });
+  state.ui.configDraft = { instId: state.institute?._id, senders: blank(), recipients: blank() };
   return state.ui.configDraft;
+}
+/** Set-like view of the draft for one list: saved state with the admin's edits applied. */
+function configSet(kind) {
+  const d = configDraft()[kind];
+  const saved = savedWhitelist()[kind];
+  return {
+    has: (e) => (saved.has(e) || d.add.has(e)) && !d.remove.has(e),
+    add: (e) => { d.remove.delete(e); if (!saved.has(e)) d.add.add(e); },
+    delete: (e) => { d.add.delete(e); if (saved.has(e)) d.remove.add(e); },
+  };
 }
 function configDiff() {
   const d = state.ui.configDraft;
   const empty = { senders: { add: [], remove: [] }, recipients: { add: [], remove: [] } };
   if (!d || !state.institute || d.instId !== state.institute._id) return empty;
   const saved = savedWhitelist();
-  const diff = (draft, base) => ({ add: [...draft].filter((e) => !base.has(e)), remove: [...base].filter((e) => !draft.has(e)) });
-  return { senders: diff(d.senders, saved.senders), recipients: diff(d.recipients, saved.recipients) };
+  const diff = (k) => ({ add: [...d[k].add].filter((e) => !saved[k].has(e)), remove: [...d[k].remove].filter((e) => saved[k].has(e)) });
+  return { senders: diff("senders"), recipients: diff("recipients") };
 }
 function configChangeCount() {
   const x = configDiff();
@@ -2496,7 +2772,7 @@ function configPickRows(kind) {
   return rosterRows().map((r) => ({
     email: r.email, name: r.student?.name || r.email.split("@")[0],
     avatar: r.student || { email: r.email },
-    flag: r.onRoster ? "" : `<span class="pill pill-warning">Not on roster</span>`,
+    flag: r.onRoster ? "" : `<span class="pill pill-warning">Not on roster</span><button type="button" class="btn btn-sm" data-cfg-roster="${escapeHtml(r.email)}">Add to roster</button>`,
   }));
 }
 function configFilteredRows(kind) {
@@ -2506,7 +2782,7 @@ function configFilteredRows(kind) {
 
 function configPanelHtml(kind) {
   const isS = kind === "senders";
-  const draft = configDraft()[kind];
+  const draft = configSet(kind);
   const saved = savedWhitelist()[kind];
   const all = configPickRows(kind);
   const rows = configFilteredRows(kind);
@@ -2534,8 +2810,10 @@ function configPanelHtml(kind) {
             <div class="person">${avatarHtml(r.avatar, 28)}<div class="person-text"><strong>${escapeHtml(r.name)}</strong><span>${escapeHtml(r.email)}</span></div></div>
             <span class="pick-flags">${r.flag}${changed ? `<span class="pill pill-accent">${on ? "Adding" : "Removing"}</span>` : ""}</span>
           </label>`;
-        }).join("") : `<div class="empty">No ${isS ? "staff" : "students"} match your search.</div>`}
-      </div>` : `<div class="empty">${isS ? "No staff yet." : "No students on the roster yet."} Add them on the ${link} page first.</div>`}
+        }).join("") : emptyState({ icon: "search", title: `No ${isS ? "staff" : "students"} match your search`, actions: `<button class="btn btn-sm" data-empty="clear-${kind}">Clear search</button>` })}
+      </div>` : emptyState({ icon: isS ? "users" : "cap", title: isS ? "No staff yet" : "No students yet",
+        text: `Add them on the ${isS ? "Staff" : "Students"} page, then pick them here.`,
+        actions: `<a class="btn btn-sm btn-primary" href="#/${isS ? "staff" : "students"}">Go to ${isS ? "Staff" : "Students"}</a>` })}
     </div>`;
 }
 
@@ -2572,7 +2850,7 @@ function renderConfig() {
   });
   $("main").querySelectorAll("[data-cfg-kind]").forEach((cb) => {
     cb.onchange = (e) => {
-      const set = configDraft()[cb.dataset.cfgKind];
+      const set = configSet(cb.dataset.cfgKind);
       e.target.checked ? set.add(cb.dataset.email) : set.delete(cb.dataset.email);
       renderConfig();
     };
@@ -2580,10 +2858,13 @@ function renderConfig() {
   $("main").querySelectorAll("[data-cfg-all],[data-cfg-none]").forEach((b) => {
     b.onclick = () => {
       const kind = b.dataset.cfgAll || b.dataset.cfgNone;
-      const set = configDraft()[kind];
+      const set = configSet(kind);
       configFilteredRows(kind).forEach((r) => (b.dataset.cfgAll ? set.add(r.email) : set.delete(r.email)));
       renderConfig();
     };
+  });
+  $("main").querySelectorAll("[data-cfg-roster]").forEach((b) => {
+    b.onclick = (e) => { e.preventDefault(); e.stopPropagation(); withBusy(b, () => addToRoster([b.dataset.cfgRoster], renderConfig)); };
   });
   if (n) {
     $("cfg-discard").onclick = () => { state.ui.configDraft = null; renderConfig(); };
@@ -2734,7 +3015,8 @@ function buildDemo() {
 }
 
 async function mockApi(path, method, body, pendingKey) {
-  await new Promise((r) => setTimeout(r, 40 + Math.random() * 90));
+  // Realistic latency so loaders, busy buttons and pending rows are visible in demo mode.
+  await new Promise((r) => setTimeout(r, 150 + Math.random() * 300));
   const ok = (data, meta) => ({ success: true, data, meta });
   const notFound = () => { throw new ApiError("Route not found", 404, pendingKey); };
   const [p] = path.split("?");
