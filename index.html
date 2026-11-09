@@ -316,6 +316,22 @@
   .person-text span { font-size: 11.5px; color: var(--text-faint); }
   .row-actions { display: flex; gap: 4px; justify-content: flex-end; }
   .empty { padding: 34px 16px; text-align: center; color: var(--text-faint); font-size: 13px; }
+
+  /* ---------- Config whitelist pickers ---------- */
+  .pick-list { max-height: 440px; overflow-y: auto; border: 1px solid var(--border-soft); border-radius: var(--radius-md); }
+  .pick-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--border-soft); cursor: pointer; }
+  .pick-row:last-child { border-bottom: none; }
+  .pick-row:hover { background: var(--panel-alt); }
+  .pick-row.changed { background: var(--accent-soft); }
+  .pick-row .person { flex: 1; }
+  .pick-row .person-text span { overflow-wrap: anywhere; }
+  .pick-flags { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+  .save-bar {
+    position: sticky; bottom: 16px; margin-top: 16px; z-index: 5;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+    padding: 10px 14px; background: var(--panel); border: 1px solid var(--accent-soft-border);
+    border-radius: var(--radius-lg); box-shadow: var(--shadow); font-size: 13px;
+  }
   .inline-meter { display: flex; align-items: center; gap: 8px; min-width: 120px; }
   .inline-meter .track { flex: 1; height: 6px; background: var(--grid); border-radius: 999px; overflow: hidden; }
   .inline-meter .fill { height: 100%; background: var(--series-1); border-radius: 999px; }
@@ -520,6 +536,10 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
         Events
       </a>
+      <a class="nav-link" href="#/config" data-route="config">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21v-7"/><path d="M4 10V3"/><path d="M12 21v-9"/><path d="M12 8V3"/><path d="M20 21v-5"/><path d="M20 12V3"/><path d="M1 14h6"/><path d="M9 8h6"/><path d="M17 16h6"/></svg>
+        Config
+      </a>
       <div class="nav-spacer"></div>
       <a class="nav-link nav-small" href="#/profile" data-route="profile">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
@@ -609,7 +629,7 @@
    Configuration — point BASE_URL at your Dash server.
    ========================================================================= */
 // const BASE_URL = "http://localhost:5000/api/v1";
-const BASE_URL = "https://dashserver.fitalyst.com/api/v1";
+const BASE_URL = "https://backend.muruako.com/api/v1";
 const SESSION_KEY = "institute_admin_session";
 const PREF_KEY = "institute_admin_prefs";
 const FETCH_CONCURRENCY = 4;
@@ -710,6 +730,8 @@ const state = {
     studentQuery: "", studentFilter: "all", selected: new Set(),
     range: "academic", from: "", to: "", deidentify: true,
     sortKey: "total", sortDir: -1,
+    configDraft: null,      // { instId, senders:Set, recipients:Set } staged whitelist edits
+    configQuery: { senders: "", recipients: "" },
   },
 };
 
@@ -881,6 +903,7 @@ function loadSession() {
 function resetData() {
   Object.assign(state, { institutes: [], institute: null, blocked: null, students: null, admins: null, errors: {}, messages: null, messagesProgress: null, events: null, eventsProgress: null });
   state.ui.selected = new Set();
+  state.ui.configDraft = null;
 }
 function signOut() {
   state.token = null; state.admin = null; state.demo = false;
@@ -1152,7 +1175,7 @@ function resetDataKeepList() {
   state.institutes = list;
 }
 
-const ROUTES = { dashboard: renderDashboard, staff: renderStaff, students: renderStudents, events: renderEvents, profile: renderProfile, backend: renderBackend };
+const ROUTES = { dashboard: renderDashboard, staff: renderStaff, students: renderStudents, events: renderEvents, config: renderConfig, profile: renderProfile, backend: renderBackend };
 function currentRoute() {
   const r = (location.hash.replace(/^#\/?/, "").split("?")[0]) || "dashboard";
   return ROUTES[r] ? r : "dashboard";
@@ -1167,7 +1190,24 @@ function render() {
   ROUTES[route]();
   window.scrollTo({ top: 0 });
 }
-window.addEventListener("hashchange", render);
+let lastHash = location.hash;
+async function onHashChange() {
+  const leavingConfig = routeOf(lastHash) === "config" && currentRoute() !== "config";
+  if (leavingConfig && configChangeCount() > 0) {
+    const target = location.hash;
+    history.replaceState(null, "", lastHash || "#/config"); // revert without firing hashchange
+    const ok = await confirmDialog("Discard unsaved whitelist changes?", `You have ${plural(configChangeCount(), "unsaved change")} on the Config page.`, "Discard");
+    if (!ok) return;
+    state.ui.configDraft = null;
+    location.hash = target;
+    return;
+  }
+  lastHash = location.hash;
+  render();
+}
+function routeOf(hash) { return ((hash || "").replace(/^#\/?/, "").split("?")[0]) || "dashboard"; }
+window.addEventListener("hashchange", onHashChange);
+window.addEventListener("beforeunload", (e) => { if (configChangeCount() > 0) { e.preventDefault(); e.returnValue = ""; } });
 
 const ICON_PENDING = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>`;
 const ICON_INFO = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>`;
@@ -2406,12 +2446,195 @@ function renderBackend() {
       <div class="panel-title">Works today (with a super_admin or staff_admin token)</div>
       <ul class="soft" style="font-size:12.5px; margin:8px 0 0; padding-left:18px; line-height:1.7;">
         <li>Sign in via <span class="mono">POST /admins/signin</span> (any admin role, including institute_admin).</li>
-        <li>Institute details, roster and whitelists via <span class="mono">/institutes/find</span> and <span class="mono">/institutes/update</span>.</li>
+        <li>Institute details, roster and whitelists via <span class="mono">/institutes/find</span> and <span class="mono">/institutes/update</span>. The Config page edits both whitelists in bulk.</li>
         <li>Staff active/inactive via <span class="mono">allowedSenders</span>; student active/inactive via <span class="mono">allowedRecipients</span>. These match how the email webhook filters senders and recipients.</li>
         <li>Message counts via <span class="mono">/email2messages/all-by-student/:id</span>; analytics via <span class="mono">/events/all-by-student/:id</span>.</li>
         <li>Staff login create/edit/delete via <span class="mono">/admins/signup|update|delete</span> (super_admin only).</li>
       </ul>
     </div>`;
+}
+
+/* =====================================================================
+   CONFIG — email whitelist (allowedSenders / allowedRecipients)
+   Picks come from the Staff and Students lists; edits are staged and
+   saved in one institute update.
+   ===================================================================== */
+function savedWhitelist() {
+  const inst = state.institute;
+  return {
+    senders: new Set((inst?.allowedSenders || []).map(lower)),
+    recipients: new Set((inst?.allowedRecipients || []).map(lower)),
+  };
+}
+function configDraft() {
+  const d = state.ui.configDraft;
+  if (d && d.instId === state.institute?._id) return d;
+  const saved = savedWhitelist();
+  state.ui.configDraft = { instId: state.institute?._id, senders: saved.senders, recipients: saved.recipients };
+  return state.ui.configDraft;
+}
+function configDiff() {
+  const d = state.ui.configDraft;
+  const empty = { senders: { add: [], remove: [] }, recipients: { add: [], remove: [] } };
+  if (!d || !state.institute || d.instId !== state.institute._id) return empty;
+  const saved = savedWhitelist();
+  const diff = (draft, base) => ({ add: [...draft].filter((e) => !base.has(e)), remove: [...base].filter((e) => !draft.has(e)) });
+  return { senders: diff(d.senders, saved.senders), recipients: diff(d.recipients, saved.recipients) };
+}
+function configChangeCount() {
+  const x = configDiff();
+  return x.senders.add.length + x.senders.remove.length + x.recipients.add.length + x.recipients.remove.length;
+}
+
+function configPickRows(kind) {
+  if (kind === "senders") {
+    return staffRows().map((r) => ({
+      email: r.email, name: r.name || r.email.split("@")[0],
+      avatar: { name: r.name, email: r.email, image: r.account?.image }, flag: "",
+    }));
+  }
+  return rosterRows().map((r) => ({
+    email: r.email, name: r.student?.name || r.email.split("@")[0],
+    avatar: r.student || { email: r.email },
+    flag: r.onRoster ? "" : `<span class="pill pill-warning">Not on roster</span>`,
+  }));
+}
+function configFilteredRows(kind) {
+  const q = lower(state.ui.configQuery[kind]);
+  return configPickRows(kind).filter((r) => !q || lower(r.name).includes(q) || r.email.includes(q));
+}
+
+function configPanelHtml(kind) {
+  const isS = kind === "senders";
+  const draft = configDraft()[kind];
+  const saved = savedWhitelist()[kind];
+  const all = configPickRows(kind);
+  const rows = configFilteredRows(kind);
+  const selected = all.filter((r) => draft.has(r.email)).length;
+  const link = isS ? `<a href="#/staff">Staff</a>` : `<a href="#/students">Students</a>`;
+  return `
+    <div class="panel">
+      <div class="panel-title-row"><span class="panel-title">${isS ? "Allowed senders" : "Allowed recipients"}</span>
+        <span class="toolbar-count" style="margin-left:0;">${fmtInt(selected)} of ${fmtInt(all.length)} selected</span></div>
+      <p class="panel-desc">${isS
+        ? `Staff whose emails are turned into messages for your students. Mail from anyone else is ignored. To add someone, go to ${link}.`
+        : `Students who receive messages emailed in by your staff. Students not ticked stay on the roster but get nothing. To add someone, go to ${link}.`}</p>
+      ${all.length ? `
+      <div class="toolbar">
+        <div class="search">${ICON_SEARCH}<input type="text" id="cfg-q-${kind}" placeholder="Search name or email" value="${escapeHtml(state.ui.configQuery[kind])}" /></div>
+        <button class="btn btn-sm" data-cfg-all="${kind}">Select all</button>
+        <button class="btn btn-sm btn-ghost" data-cfg-none="${kind}">Select none</button>
+      </div>
+      <div class="pick-list" id="cfg-list-${kind}">
+        ${rows.length ? rows.map((r) => {
+          const on = draft.has(r.email);
+          const changed = on !== saved.has(r.email);
+          return `<label class="pick-row${changed ? " changed" : ""}">
+            <input type="checkbox" data-cfg-kind="${kind}" data-email="${escapeHtml(r.email)}" ${on ? "checked" : ""} aria-label="${escapeHtml(r.email)}" />
+            <div class="person">${avatarHtml(r.avatar, 28)}<div class="person-text"><strong>${escapeHtml(r.name)}</strong><span>${escapeHtml(r.email)}</span></div></div>
+            <span class="pick-flags">${r.flag}${changed ? `<span class="pill pill-accent">${on ? "Adding" : "Removing"}</span>` : ""}</span>
+          </label>`;
+        }).join("") : `<div class="empty">No ${isS ? "staff" : "students"} match your search.</div>`}
+      </div>` : `<div class="empty">${isS ? "No staff yet." : "No students on the roster yet."} Add them on the ${link} page first.</div>`}
+    </div>`;
+}
+
+function renderConfig() {
+  configDraft();
+  const n = configChangeCount();
+  const saving = !!state.ui.configSaving;
+  const scrolls = {};
+  ["senders", "recipients"].forEach((k) => { const el = $(`cfg-list-${k}`); if (el) scrolls[k] = el.scrollTop; });
+  $("main").innerHTML = `
+    <div class="page-head">
+      <div><h1>Config</h1><p>Settings for ${escapeHtml(state.institute.name || "your institute")}. The email whitelist decides which staff can email messages in and which students receive them. The Active switches on the Staff and Students pages change the same lists.</p></div>
+    </div>
+    <div class="panel-title" style="margin-bottom:-4px;">Email whitelist</div>
+    <div class="grid-2">${configPanelHtml("senders")}${configPanelHtml("recipients")}</div>
+    ${n ? `<div class="save-bar" role="status">
+      <span><strong>${plural(n, "unsaved change")}</strong></span>
+      <div class="page-actions">
+        <button class="btn" id="cfg-discard" ${saving ? "disabled" : ""}>Discard</button>
+        <button class="btn btn-primary" id="cfg-save" ${saving ? "disabled" : ""}>${saving ? "Saving…" : "Save changes"}</button>
+      </div>
+    </div>` : ""}`;
+
+  ["senders", "recipients"].forEach((kind) => {
+    const list = $(`cfg-list-${kind}`);
+    if (list && scrolls[kind]) list.scrollTop = scrolls[kind];
+    const q = $(`cfg-q-${kind}`);
+    if (q) q.oninput = (e) => {
+      state.ui.configQuery[kind] = e.target.value;
+      const p = e.target.selectionStart;
+      renderConfig();
+      const input = $(`cfg-q-${kind}`); input.focus(); input.setSelectionRange(p, p);
+    };
+  });
+  $("main").querySelectorAll("[data-cfg-kind]").forEach((cb) => {
+    cb.onchange = (e) => {
+      const set = configDraft()[cb.dataset.cfgKind];
+      e.target.checked ? set.add(cb.dataset.email) : set.delete(cb.dataset.email);
+      renderConfig();
+    };
+  });
+  $("main").querySelectorAll("[data-cfg-all],[data-cfg-none]").forEach((b) => {
+    b.onclick = () => {
+      const kind = b.dataset.cfgAll || b.dataset.cfgNone;
+      const set = configDraft()[kind];
+      configFilteredRows(kind).forEach((r) => (b.dataset.cfgAll ? set.add(r.email) : set.delete(r.email)));
+      renderConfig();
+    };
+  });
+  if (n) {
+    $("cfg-discard").onclick = () => { state.ui.configDraft = null; renderConfig(); };
+    $("cfg-save").onclick = saveConfig;
+  }
+}
+
+async function saveConfig() {
+  const diff = configDiff();
+  state.ui.configSaving = true;
+  renderConfig();
+  try {
+    // Apply deltas to the freshest copy so edits made elsewhere aren't overwritten.
+    await refreshInstitute();
+    const apply = (list, d) => uniq([...(list || []).map(lower).filter((e) => !d.remove.includes(e)), ...d.add]);
+    const body = {};
+    if (diff.senders.add.length || diff.senders.remove.length) body.allowedSenders = apply(state.institute.allowedSenders, diff.senders);
+    if (diff.recipients.add.length || diff.recipients.remove.length) body.allowedRecipients = apply(state.institute.allowedRecipients, diff.recipients);
+    if (!Object.keys(body).length) { state.ui.configDraft = null; return; }
+
+    // Keep the Staff page consistent: login status (pending endpoint) + remembered inactive staff.
+    const changedSenders = [...diff.senders.add.map((e) => [e, true]), ...diff.senders.remove.map((e) => [e, false])];
+    const staff = new Map(staffRows().map((r) => [r.email, r]));
+    for (const [email, active] of changedSenders) {
+      const acct = staff.get(email)?.account;
+      if (!acct) continue;
+      try {
+        await api(`/admins/${acct._id}/status`, { method: "PATCH", body: { isActive: active }, pendingKey: "staffStatus" });
+        markOk("staffStatus");
+      } catch (err) { describeError(err, "disable the staff login"); }
+    }
+
+    await patchInstitute(body);
+
+    const inactive = getInactiveStaff();
+    for (const [email, active] of changedSenders) {
+      if (active) delete inactive[email];
+      else inactive[email] = { name: staff.get(email)?.name || "", at: Date.now() };
+    }
+    setInactiveStaff(inactive);
+
+    const total = changedSenders.length + diff.recipients.add.length + diff.recipients.remove.length;
+    state.ui.configDraft = null;
+    toast(`Whitelist saved (${plural(total, "change")}).`, "success");
+  } catch (err) {
+    reportError(err, "update the email whitelist"); // draft is kept so nothing is lost
+  } finally {
+    state.ui.configSaving = false;
+    renderTopbar();
+    if (currentRoute() === "config") renderConfig();
+  }
 }
 
 /* ---------------------------------------------------------------------
